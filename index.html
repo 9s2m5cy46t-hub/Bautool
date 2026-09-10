@@ -1,0 +1,1022 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wilde Schalung</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<style>
+:root{
+  --paper:#EAE8E1;
+  --surface:#F5F3ED;
+  --surface-2:#E1DFD6;
+  --ink:#1C2320;
+  --ink-soft:#5C665F;
+  --ink-faint:#89918B;
+  --rule:#CBC8BE;
+  --rule-strong:#A9A69B;
+  --wide:#2F5D50;
+  --wide-soft:#D6E0DB;
+  --narrow:#B08324;
+  --narrow-soft:#EDE0C4;
+  --alarm:#9B3B2E;
+  --alarm-soft:#F0DAD5;
+  --ok:#2F5D50;
+  --shadow:0 1px 0 rgba(28,35,32,.06), 0 6px 22px -14px rgba(28,35,32,.5);
+  --r:3px;
+  --step:clamp(.9rem,.4rem + 1.2vw,1.1rem);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#141A18;
+    --surface:#1D2422;
+    --surface-2:#28302D;
+    --ink:#E6E8E2;
+    --ink-soft:#A2ACA5;
+    --ink-faint:#727B76;
+    --rule:#343D39;
+    --rule-strong:#4A544F;
+    --wide:#57A18B;
+    --wide-soft:#22352F;
+    --narrow:#D9A93F;
+    --narrow-soft:#332A18;
+    --alarm:#D4705C;
+    --alarm-soft:#3A211C;
+    --ok:#57A18B;
+    --shadow:0 1px 0 rgba(0,0,0,.3), 0 6px 22px -14px rgba(0,0,0,.9);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#141A18;
+  --surface:#1D2422;
+  --surface-2:#28302D;
+  --ink:#E6E8E2;
+  --ink-soft:#A2ACA5;
+  --ink-faint:#727B76;
+  --rule:#343D39;
+  --rule-strong:#4A544F;
+  --wide:#57A18B;
+  --wide-soft:#22352F;
+  --narrow:#D9A93F;
+  --narrow-soft:#332A18;
+  --alarm:#D4705C;
+  --alarm-soft:#3A211C;
+  --ok:#57A18B;
+  --shadow:0 1px 0 rgba(0,0,0,.3), 0 6px 22px -14px rgba(0,0,0,.9);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:"Archivo","Helvetica Neue",Arial,sans-serif;
+  font-size:15px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1240px;margin:0 auto;padding-inline:20px;padding-block:0 64px}
+h1,h2,h3{margin:0;text-wrap:balance;letter-spacing:-.015em;font-weight:600}
+p{margin:0}
+button,input,select{font:inherit;color:inherit}
+
+/* ---------- Kopf ---------- */
+header.top{
+  padding-block:34px 22px;
+  border-bottom:1px solid var(--rule);
+  display:flex;flex-wrap:wrap;gap:18px 32px;align-items:flex-end;justify-content:space-between;
+}
+.brand h1{font-size:clamp(1.9rem,1.3rem + 2.1vw,2.9rem);line-height:1.02}
+.brand .sub{
+  font-family:"Source Serif 4",Georgia,serif;
+  font-size:1.02rem;color:var(--ink-soft);max-width:56ch;margin-top:9px;
+}
+.brand-actions{display:flex;gap:6px;flex:none;align-self:flex-end}
+.eyebrow{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);
+  display:block;margin-bottom:7px;
+}
+
+/* ---------- Ergebnisleiste ---------- */
+.bar{
+  position:sticky;top:0;z-index:30;
+  background:var(--paper);
+  border-bottom:1px solid var(--rule);
+  margin-inline:-20px;padding:12px 20px;
+  display:flex;flex-wrap:wrap;gap:10px 26px;align-items:center;
+}
+.bar .headline{display:flex;align-items:baseline;gap:10px}
+.bar .num{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-variant-numeric:tabular-nums;
+  font-size:1.65rem;font-weight:600;letter-spacing:-.02em;
+}
+.bar .lbl{font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint)}
+.bar .spread{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+
+.pill{
+  display:inline-flex;align-items:center;gap:6px;
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:.72rem;font-weight:500;letter-spacing:.04em;
+  padding:4px 9px;border-radius:100px;border:1px solid currentColor;
+  white-space:nowrap;
+}
+.pill.good{color:var(--ok);background:var(--wide-soft)}
+.pill.warn{color:var(--narrow);background:var(--narrow-soft)}
+.pill.bad{color:var(--alarm);background:var(--alarm-soft)}
+.pill .dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}
+
+/* ---------- Raster ---------- */
+.cols{display:grid;grid-template-columns:minmax(300px,360px) 1fr;gap:34px;align-items:start;margin-top:30px}
+@media (max-width:900px){.cols{grid-template-columns:1fr;gap:26px}}
+
+.panel{
+  background:var(--surface);border:1px solid var(--rule);border-radius:var(--r);
+  padding:18px 18px 20px;margin-bottom:16px;
+}
+.panel > h2{
+  font-size:.76rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);
+  font-family:"IBM Plex Mono",ui-monospace,monospace;font-weight:500;
+  padding-bottom:10px;margin-bottom:14px;border-bottom:1px solid var(--rule);
+}
+.note{font-family:"Source Serif 4",Georgia,serif;font-size:.9rem;color:var(--ink-soft);margin-top:12px}
+
+.field{display:grid;gap:5px;margin-bottom:13px}
+.field:last-child{margin-bottom:0}
+.field label{font-size:.8rem;font-weight:500;color:var(--ink-soft)}
+.field .hint{font-size:.74rem;color:var(--ink-faint);font-family:"Source Serif 4",Georgia,serif}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+
+input[type=number],input[type=text],select{
+  width:100%;padding:8px 10px;
+  background:var(--paper);border:1px solid var(--rule-strong);border-radius:var(--r);
+  font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums;
+  font-size:.92rem;
+}
+select{font-family:"Archivo",sans-serif}
+input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visible{
+  outline:2px solid var(--wide);outline-offset:1px;
+}
+input[type=range]{width:100%;accent-color:var(--wide)}
+.swatch{display:inline-block;width:10px;height:10px;border-radius:2px;vertical-align:baseline;margin-right:5px}
+.sw-wide{background:var(--wide)}
+.sw-narrow{background:var(--narrow)}
+
+button{
+  cursor:pointer;background:var(--surface-2);border:1px solid var(--rule-strong);
+  border-radius:var(--r);padding:7px 12px;font-size:.86rem;font-weight:500;
+}
+button:hover{border-color:var(--ink-soft)}
+button.primary{background:var(--wide);border-color:var(--wide);color:#F5F3ED}
+:root[data-theme="dark"] button.primary,
+:root:not([data-theme="light"]) button.primary{color:#101614}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]) button.primary{color:#F5F3ED}}
+button.ghost{background:none;border-color:transparent;color:var(--ink-faint);padding:4px 7px}
+button.ghost:hover{color:var(--alarm);border-color:var(--rule)}
+
+/* ---------- Wandliste ---------- */
+.walls{display:grid;gap:8px}
+.wallrow{display:grid;grid-template-columns:1fr 104px 30px;gap:8px;align-items:center}
+.wallrow .idx{
+  font-family:"IBM Plex Mono",monospace;font-size:.7rem;color:var(--ink-faint);
+}
+.addrow{display:flex;gap:8px;margin-top:12px;align-items:center;flex-wrap:wrap}
+
+/* ---------- Ergebniskarten ---------- */
+.result{margin-bottom:26px}
+.result-head{
+  display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline;justify-content:space-between;
+  padding-bottom:9px;border-bottom:2px solid var(--ink);margin-bottom:14px;
+}
+.result-head h3{font-size:1.12rem}
+.result-head .len{
+  font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;
+  font-size:.86rem;color:var(--ink-soft);
+}
+
+.stats{display:flex;flex-wrap:wrap;gap:0;border:1px solid var(--rule);border-radius:var(--r);overflow:hidden;background:var(--surface)}
+.stat{flex:1 1 110px;padding:11px 13px;border-right:1px solid var(--rule);min-width:0}
+.stat:last-child{border-right:none}
+.stat .k{font-size:.68rem;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-faint);font-family:"IBM Plex Mono",monospace}
+.stat .v{
+  font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;
+  font-size:1.24rem;font-weight:600;margin-top:3px;letter-spacing:-.02em;
+}
+.stat .v small{font-size:.62em;font-weight:400;color:var(--ink-soft);margin-left:2px}
+
+.viz{margin-top:14px;border:1px solid var(--rule);border-radius:var(--r);background:var(--surface);padding:12px}
+.viz svg{display:block;width:100%;height:auto;max-width:100%}
+.legend{
+  display:flex;gap:16px;flex-wrap:wrap;margin-top:9px;
+  font-family:"IBM Plex Mono",monospace;font-size:.72rem;color:var(--ink-soft);
+}
+
+details.anriss{margin-top:12px;border:1px solid var(--rule);border-radius:var(--r);background:var(--surface)}
+details.anriss > summary{
+  cursor:pointer;padding:10px 13px;font-size:.84rem;font-weight:500;list-style:none;
+  display:flex;justify-content:space-between;gap:12px;align-items:center;
+}
+details.anriss > summary::-webkit-details-marker{display:none}
+details.anriss > summary::after{content:"+";font-family:"IBM Plex Mono",monospace;color:var(--ink-faint)}
+details.anriss[open] > summary::after{content:"–"}
+.tablewrap{overflow-x:auto;border-top:1px solid var(--rule)}
+table{border-collapse:collapse;width:100%;font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;font-size:.79rem}
+th,td{padding:5px 13px;text-align:right;white-space:nowrap}
+th{
+  font-size:.66rem;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-faint);
+  font-weight:500;border-bottom:1px solid var(--rule);position:sticky;top:0;background:var(--surface);
+}
+td:first-child,th:first-child{text-align:left}
+tbody tr:nth-child(even){background:var(--surface-2)}
+.tag-w{color:var(--wide);font-weight:600}
+.tag-n{color:var(--narrow);font-weight:600}
+
+.alts{margin-top:12px}
+.alts .altrow{
+  display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;
+  padding:7px 0;border-bottom:1px dotted var(--rule);
+  font-family:"IBM Plex Mono",monospace;font-size:.78rem;
+}
+.alts .altrow:last-child{border-bottom:none}
+.alts button{padding:3px 9px;font-size:.74rem;font-family:"Archivo",sans-serif}
+
+.empty{
+  border:1px dashed var(--rule-strong);border-radius:var(--r);padding:26px 20px;
+  text-align:center;color:var(--ink-soft);font-family:"Source Serif 4",Georgia,serif;
+}
+.empty strong{display:block;font-family:"Archivo",sans-serif;color:var(--ink);margin-bottom:6px}
+
+/* ---------- Fußtext ---------- */
+.foot{margin-top:44px;padding-top:26px;border-top:1px solid var(--rule)}
+.foot h2{font-size:1.05rem;margin-bottom:14px}
+.praxis{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:22px 30px}
+.praxis section h4{
+  margin:0 0 5px;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;
+  font-family:"IBM Plex Mono",monospace;font-weight:500;color:var(--wide);
+}
+.praxis section p{font-family:"Source Serif 4",Georgia,serif;font-size:.92rem;color:var(--ink-soft);max-width:62ch}
+.formel{
+  font-family:"IBM Plex Mono",monospace;font-size:.82rem;background:var(--surface);
+  border:1px solid var(--rule);border-left:3px solid var(--wide);border-radius:var(--r);
+  padding:11px 13px;margin:10px 0;overflow-x:auto;white-space:nowrap;color:var(--ink);
+}
+.beispiel-banner{
+  display:flex;gap:10px;align-items:flex-start;
+  background:var(--narrow-soft);border:1px solid var(--narrow);border-radius:var(--r);
+  padding:10px 13px;margin-top:20px;font-size:.86rem;
+}
+.beispiel-banner b{color:var(--narrow);flex:none;font-family:"IBM Plex Mono",monospace;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;padding-top:2px}
+.beispiel-banner span{font-family:"Source Serif 4",Georgia,serif}
+.beispiel-banner{margin-top:0;margin-bottom:22px}
+@media (prefers-reduced-motion:no-preference){
+  .result{animation:rise .32s ease-out both}
+  @keyframes rise{from{opacity:.4;transform:translateY(4px)}to{opacity:1;transform:none}}
+}
+@media print{
+  .bar,.panel,.foot{break-inside:avoid}
+  body{background:#fff}
+}
+</style>
+
+<div class="wrap">
+
+<header class="top">
+  <div class="brand">
+    <span class="eyebrow">Senkrechte Brettschalung &middot; Aufteilung &amp; Anriss</span>
+    <h1>Wilde Schalung</h1>
+    <p class="sub">Findet die Kombination aus breiten und schmalen Brettern, mit der jede Hauswand
+      restlos aufgeht &ndash; und zwar mit <em>einer</em> Fugenbreite f&uuml;r alle Seiten, damit an
+      den Ecken nichts auff&auml;llt.</p>
+  </div>
+  <div class="brand-actions">
+    <button type="button" id="btnTheme" class="ghost" title="Hell / dunkel umschalten">◐ Ansicht</button>
+    <button type="button" id="btnPrint" class="ghost" title="Anrisslisten drucken">⎙ Drucken</button>
+  </div>
+</header>
+
+<div class="bar" id="bar">
+  <div class="headline">
+    <span class="num" id="barFuge">–</span>
+    <span class="lbl">Fuge f&uuml;r alle W&auml;nde</span>
+  </div>
+  <div class="headline">
+    <span class="num" id="barBretter">–</span>
+    <span class="lbl">Bretter gesamt</span>
+  </div>
+  <div class="spread" id="barStatus"></div>
+</div>
+
+<div class="cols">
+
+  <!-- ============ EINGABEN ============ -->
+  <div class="input-col">
+
+    <div class="panel">
+      <h2>Bretter</h2>
+      <div class="row2">
+        <div class="field">
+          <label for="wBreit"><span class="swatch sw-wide"></span>Breit &middot; mm</label>
+          <input type="number" id="wBreit" value="140" min="10" max="600" step="1">
+        </div>
+        <div class="field">
+          <label for="wSchmal"><span class="swatch sw-narrow"></span>Schmal &middot; mm</label>
+          <input type="number" id="wSchmal" value="95" min="10" max="600" step="1">
+        </div>
+      </div>
+      <p class="hint" style="font-family:'Source Serif 4',Georgia,serif;font-size:.82rem;color:var(--ink-faint)">
+        Sichtbare Breite im eingebauten Zustand &ndash; bei offener Fuge also das ges&auml;gte Ma&szlig;,
+        bei Nut/Feder das Deckma&szlig;.</p>
+    </div>
+
+    <div class="panel">
+      <h2>Fuge</h2>
+      <div class="row3">
+        <div class="field">
+          <label for="gMin">min</label>
+          <input type="number" id="gMin" value="8" min="-40" max="100" step="0.5">
+        </div>
+        <div class="field">
+          <label for="gZiel">Ziel</label>
+          <input type="number" id="gZiel" value="12" min="-40" max="100" step="0.5">
+        </div>
+        <div class="field">
+          <label for="gMax">max</label>
+          <input type="number" id="gMax" value="18" min="-40" max="100" step="0.5">
+        </div>
+      </div>
+      <div class="field">
+        <label for="randModus">Wandanfang und -ende</label>
+        <select id="randModus">
+          <option value="brett">Beginnt und endet mit einem Brett</option>
+          <option value="fuge">Beginnt und endet mit einer Fuge</option>
+        </select>
+        <span class="hint">Bei &bdquo;Fuge&ldquo; bleibt an beiden Ecken ein Abstand zum Eckbrett stehen.</span>
+      </div>
+      <div class="field">
+        <label for="tolG">Zul&auml;ssige Abweichung zwischen den W&auml;nden &middot; <span id="tolGOut" class="mono">0,4</span> mm</label>
+        <input type="range" id="tolG" value="0.4" min="0" max="3" step="0.1">
+        <span class="hint">Wie weit die Fuge von Wand zu Wand differieren darf. Unter 0,5&nbsp;mm sieht das niemand.</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>W&auml;nde</h2>
+      <div class="walls" id="walls"></div>
+      <div class="addrow">
+        <button type="button" id="btnAddWall">+ Wand</button>
+        <button type="button" id="btnReset" class="ghost">Beispielwerte zur&uuml;ckholen</button>
+      </div>
+      <p class="note">Ein Wandabschnitt neben einem Fenster ist hier eine eigene &bdquo;Wand&ldquo;.
+        L&auml;nge = das St&uuml;ck, das wirklich beplankt wird, Eckbretter und Leibungen bereits abgezogen.</p>
+    </div>
+
+    <div class="panel">
+      <h2>Wildes Muster</h2>
+      <div class="field">
+        <label for="anteil">Wunschanteil breite Bretter &middot; <span id="anteilOut">50</span>&nbsp;%</label>
+        <input type="range" id="anteil" value="50" min="0" max="100" step="5">
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="maxRun">Max. gleiche in Folge</label>
+          <input type="number" id="maxRun" value="2" min="1" max="9" step="1">
+        </div>
+        <div class="field">
+          <label for="seed">Muster-Nr.</label>
+          <input type="number" id="seed" value="1874" min="0" max="999999" step="1">
+        </div>
+      </div>
+      <div class="addrow">
+        <button type="button" id="btnSeed" class="primary">Neues Muster w&uuml;rfeln</button>
+      </div>
+      <p class="note">Die Muster-Nr. merken: gleiche Nummer &rarr; exakt gleiche Brettfolge.
+        Damit l&auml;sst sich die Liste jederzeit neu drucken, ohne dass die Fassade anders aussieht.</p>
+    </div>
+
+  </div>
+
+  <!-- ============ ERGEBNISSE ============ -->
+  <div class="output-col" id="output"></div>
+
+</div>
+
+<div class="foot">
+  <h2>Wie gerechnet wird</h2>
+  <p style="font-family:'Source Serif 4',Georgia,serif;color:var(--ink-soft);max-width:64ch">
+    Jedes Brett belegt seine Breite plus eine Fuge &ndash; dieses Ma&szlig; hei&szlig;t Rapport.
+    Gesucht sind zwei ganze Zahlen, die mit einer Fuge aus dem erlaubten Bereich genau die Wandl&auml;nge f&uuml;llen:</p>
+  <div class="formel">n<sub>breit</sub> &middot; (B + f) &nbsp;+&nbsp; n<sub>schmal</sub> &middot; (S + f) &nbsp;=&nbsp; L + f&nbsp;&nbsp;&nbsp;(Wand beginnt und endet mit Brett)</div>
+  <p style="font-family:'Source Serif 4',Georgia,serif;color:var(--ink-soft);max-width:64ch">
+    Zu jeder Kombination l&auml;sst sich die Fuge exakt ausrechnen, statt einen Rest zu verteilen.
+    Das Werkzeug z&auml;hlt alle Kombinationen pro Wand auf und sucht dann die <em>eine</em> Fuge, bei der
+    jede Wand aufgeht &ndash; das ist der Teil, an dem eine Rechnung pro Einzelwand scheitert.</p>
+
+  <div class="praxis" style="margin-top:26px">
+    <section>
+      <h4>Holz arbeitet</h4>
+      <p>S&auml;gerau und frisch eingebaut schwindet L&auml;rche quer zur Faser gut 1&nbsp;% je 3&nbsp;%
+        Feuchte&auml;nderung. Ein 140er Brett wird &uuml;ber den ersten Sommer 2&ndash;4&nbsp;mm schmaler,
+        die Fuge entsprechend breiter. Wer eine 8-mm-Fuge plant, hat im August 12&nbsp;mm.
+        Rechne mit der Fuge, die du dauerhaft sehen willst, und baue entsprechend enger ein.</p>
+    </section>
+    <section>
+      <h4>Kumuliert anrei&szlig;en</h4>
+      <p>Die Anrissliste gibt Ma&szlig;e ab der linken Wandkante, nicht von Brett zu Brett.
+        Wer Brett an Brett anlegt, summiert 60&nbsp;mal einen halben Millimeter Anlegefehler und
+        landet an der letzten Ecke drei Zentimeter daneben.</p>
+    </section>
+    <section>
+      <h4>Ecken zuerst festlegen</h4>
+      <p>Ob die Wand stumpf gegen ein Eckbrett l&auml;uft, auf Gehrung geht oder von einer Eckleiste
+        &uuml;berdeckt wird, entscheidet &uuml;ber die L&auml;nge, die hier einzutragen ist.
+        Diese Entscheidung geh&ouml;rt vor die Aufteilung, nicht danach.</p>
+    </section>
+    <section>
+      <h4>Fenster brechen das Raster</h4>
+      <p>&Ouml;ffnungen sind hier nicht modelliert. Der praktikable Weg: Wand links und rechts des
+        Fensters als getrennte Abschnitte eintragen und beide mit derselben Fuge rechnen lassen.
+        &Uuml;ber dem Sturz l&auml;uft das Raster der breiteren Seite durch.</p>
+    </section>
+  </div>
+</div>
+
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* =====================================================================
+   ZUSTAND
+   ===================================================================== */
+const BEISPIEL = {
+  B:140, S:95, gMin:8, gZiel:12, gMax:18,
+  randModus:"brett", tolG:0.4, anteil:50, maxRun:2, seed:1874,
+  walls:[
+    {name:"Giebel Süd", L:8400},
+    {name:"Traufe Ost",     L:6200},
+    {name:"Giebel Nord",    L:8400},
+    {name:"Traufe West",    L:6200}
+  ],
+  istBeispiel:true
+};
+let S = JSON.parse(JSON.stringify(BEISPIEL));
+
+const KEY = "wilde-schalung-v1";
+function speichern(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+function laden(){
+  try{
+    const raw = localStorage.getItem(KEY);
+    if(!raw) return;
+    const o = JSON.parse(raw);
+    if(o && Array.isArray(o.walls) && o.walls.length) S = Object.assign({}, BEISPIEL, o);
+  }catch(e){}
+}
+
+/* =====================================================================
+   RECHNEN
+   ---------------------------------------------------------------------
+   Randmodus "brett": N Bretter, N-1 Fugen  ->  c = +1
+   Randmodus "fuge" : N Bretter, N+1 Fugen  ->  c = -1
+   Es gilt jeweils:  nb*(B+f) + ns*(S+f) = L + c*f
+   und exakt:        f = (L - nb*B - ns*S) / (N - c)
+   ===================================================================== */
+
+function fugeFuer(L, B, Sw, nb, ns, c){
+  const F = nb + ns - c;              // Anzahl Fugen
+  if(F <= 0) return null;
+  return (L - nb*B - ns*Sw) / F;
+}
+
+/** Alle (nb, ns)-Kombinationen einer Wand, deren exakte Fuge im erlaubten Bereich liegt. */
+function kandidaten(L, B, Sw, gMin, gMax, c){
+  const out = [];
+  if(!(L > 0) || !(B > 0) || !(Sw > 0) || gMax < gMin) return out;
+
+  const rapportMin = Math.min(B, Sw) + gMin;
+  const nbMax = Math.min(2000, Math.ceil((L + Math.abs(gMax)) / (B + gMin)) + 2);
+  const nGrenze = Math.ceil((L + Math.abs(gMax)) / rapportMin) + 2;
+
+  for(let nb = 0; nb <= nbMax; nb++){
+    // ns ist monoton fallend in f -> Suchfenster aus den beiden Bereichsgrenzen ableiten
+    let lo = Infinity, hi = -Infinity;
+    for(const f of [gMin, gMax]){
+      const nenner = Sw + f;
+      if(Math.abs(nenner) < 1e-9) continue;
+      const v = (L + c*f - nb*(B + f)) / nenner;
+      lo = Math.min(lo, v); hi = Math.max(hi, v);
+    }
+    if(!isFinite(lo)) continue;
+    const von = Math.max(0, Math.floor(lo) - 1);
+    const bis = Math.min(nGrenze, Math.ceil(hi) + 1);
+
+    for(let ns = von; ns <= bis; ns++){
+      const N = nb + ns;
+      if(N < 1 || N > nGrenze) continue;
+      const f = fugeFuer(L, B, Sw, nb, ns, c);
+      if(f === null) continue;
+      if(f < gMin - 1e-9 || f > gMax + 1e-9) continue;
+      out.push({nb:nb, ns:ns, N:N, g:f, anteil: N ? nb/N : 0});
+    }
+  }
+  out.sort((a,b)=> a.g - b.g);
+  return out;
+}
+
+/** Erster Index mit g >= ziel (binäre Suche auf sortierter Kandidatenliste). */
+function unteresEnde(list, ziel){
+  let a = 0, b = list.length;
+  while(a < b){ const m = (a + b) >> 1; if(list[m].g < ziel) a = m + 1; else b = m; }
+  return a;
+}
+
+/** Bester Kandidat einer Wand innerhalb [gTest-tol, gTest+tol]. */
+function besterImFenster(list, gTest, tol, wunschAnteil){
+  let i = unteresEnde(list, gTest - tol - 1e-9);
+  let best = null, bestScore = Infinity;
+  for(; i < list.length && list[i].g <= gTest + tol + 1e-9; i++){
+    const k = list[i];
+    const score = Math.abs(k.anteil - wunschAnteil) * 10 + Math.abs(k.g - gTest) * 0.05;
+    if(score < bestScore){ bestScore = score; best = k; }
+  }
+  return best;
+}
+
+/**
+ * Sucht die eine Fugenbreite, mit der jede Wand aufgeht.
+ * Getestet werden die exakten Fugenwerte aller Kandidaten - dazwischen
+ * kann kein Optimum liegen, das nicht schon an einem Randpunkt erreicht wird.
+ */
+const SUCH_LIMIT = 1500;
+
+/** Zu lange Listen auf die Aufteilungen mit dem passendsten Breitanteil kuerzen. */
+function eindampfen(liste, wunschAnteil){
+  if(liste.length <= SUCH_LIMIT) return liste;
+  return liste.slice()
+    .sort((a, b) => Math.abs(a.anteil - wunschAnteil) - Math.abs(b.anteil - wunschAnteil))
+    .slice(0, SUCH_LIMIT)
+    .sort((a, b) => a.g - b.g);
+}
+
+function gemeinsameFuge(rohListen, tol, gZiel, wunschAnteil, ohneKuerzung){
+  if(!rohListen.length || rohListen.some(l => l.length === 0)){
+    return {ok:false, grund:"leer", g:null, treffer:[], minTol:null};
+  }
+  const listen = ohneKuerzung ? rohListen : rohListen.map(l => eindampfen(l, wunschAnteil));
+  // Bei sehr vielen Kandidaten (lange Waende, schmale Bretter) werden nicht
+  // mehr alle Fugenwerte getestet, sondern nur die der duennsten Liste samt
+  // ihrer Toleranzraender - dort liegen die Wechselpunkte.
+  const gesamt = listen.reduce((a, l) => a + l.length, 0);
+  const punkte = [];
+  if(gesamt <= 20000){
+    for(const l of listen) for(const k of l) punkte.push(k.g);
+  }else{
+    let anker = listen[0];
+    for(const l of listen) if(l.length < anker.length) anker = l;
+    for(const k of anker) punkte.push(k.g, k.g - tol, k.g + tol);
+  }
+  punkte.push(gZiel);
+  punkte.sort((a,b)=>a-b);
+
+  let best = null, bestScore = Infinity;
+  let minTolNoetig = Infinity;
+
+  for(const gTest of punkte){
+    let maxAbw = 0, anteilAbw = 0;
+    const treffer = [];
+    let ok = true;
+    for(const l of listen){
+      const k = besterImFenster(l, gTest, tol, wunschAnteil);
+      if(!k){
+        // für die Diagnose: wie weit wäre der nächstbeste weg?
+        const i = unteresEnde(l, gTest);
+        let d = Infinity;
+        if(i < l.length) d = Math.min(d, Math.abs(l[i].g - gTest));
+        if(i > 0)        d = Math.min(d, Math.abs(l[i-1].g - gTest));
+        maxAbw = Math.max(maxAbw, d);
+        ok = false;
+        continue;
+      }
+      treffer.push(k);
+      maxAbw = Math.max(maxAbw, Math.abs(k.g - gTest));
+      anteilAbw += Math.abs(k.anteil - wunschAnteil);
+    }
+    minTolNoetig = Math.min(minTolNoetig, maxAbw);
+    if(!ok) continue;
+
+    const score = anteilAbw * 10 + Math.abs(gTest - gZiel) * 0.6 + maxAbw * 2;
+    if(score < bestScore){
+      bestScore = score;
+      best = {ok:true, g:gTest, treffer:treffer, maxAbw:maxAbw, minTol:minTolNoetig};
+    }
+  }
+  if(!best){
+    // Nichts gefunden, obwohl gekuerzt wurde? Genau einmal ungekuerzt nachfassen.
+    const gekuerzt = !ohneKuerzung && listen.some((l, i) => l.length < rohListen[i].length);
+    if(gekuerzt) return gemeinsameFuge(rohListen, tol, gZiel, wunschAnteil, true);
+    return {ok:false, grund:"keine", g:null, treffer:[], minTol:isFinite(minTolNoetig)?minTolNoetig:null};
+  }
+  best.minTol = minTolNoetig;
+  return best;
+}
+
+/* =====================================================================
+   WILDES MUSTER  -  deterministisch über die Muster-Nr.
+   ===================================================================== */
+function mulberry32(a){
+  return function(){
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** Reicht maxRun, um nb breite und ns schmale Bretter zu mischen? */
+function maxRunNoetig(nb, ns){
+  const a = ns > 0 ? Math.ceil(nb / (ns + 1)) : nb;
+  const b = nb > 0 ? Math.ceil(ns / (nb + 1)) : ns;
+  return Math.max(1, a, b);
+}
+
+/**
+ * Bleibt der Rest mischbar, wenn gerade so verteilt wurde?
+ * Ein laufender Block darf nur noch bis "limit" aufgefuellt werden, jedes
+ * Brett der anderen Sorte oeffnet einen neuen Block.
+ */
+function restMischbar(restB, restS, letzter, lauf, limit){
+  const capB = (letzter === "B") ? (limit - lauf) + restS * limit : (restS + 1) * limit;
+  const capS = (letzter === "S") ? (limit - lauf) + restB * limit : (restB + 1) * limit;
+  return restB <= capB && restS <= capS;
+}
+
+function muster(nb, ns, maxRunWunsch, seed){
+  const noetig = maxRunNoetig(nb, ns);
+  const limit = Math.max(1, maxRunWunsch, noetig);
+  const rnd = mulberry32(seed >>> 0);
+  const folge = [];
+  let restB = nb, restS = ns, lauf = 0, letzter = null;
+
+  while(restB + restS > 0){
+    // Eine Sorte ist waehlbar, wenn sie den laufenden Block nicht sprengt
+    // UND der Rest danach noch regelkonform aufgeht.
+    const kannB = restB > 0 && !(letzter === "B" && lauf >= limit) &&
+                  restMischbar(restB - 1, restS, "B", letzter === "B" ? lauf + 1 : 1, limit);
+    const kannS = restS > 0 && !(letzter === "S" && lauf >= limit) &&
+                  restMischbar(restB, restS - 1, "S", letzter === "S" ? lauf + 1 : 1, limit);
+
+    let wahl;
+    if(kannB && kannS) wahl = rnd() < restB / (restB + restS) ? "B" : "S";
+    else if(kannB)     wahl = "B";
+    else if(kannS)     wahl = "S";
+    else               wahl = restB > 0 ? "B" : "S";   // Notnagel, sollte nie greifen
+
+    folge.push(wahl);
+    if(wahl === "B") restB--; else restS--;
+    lauf = (wahl === letzter) ? lauf + 1 : 1;
+    letzter = wahl;
+  }
+  return {folge:folge, limit:limit, aufgeweicht: limit > maxRunWunsch};
+}
+
+/** Anrissmaße ab linker Wandkante, kumuliert. */
+function anriss(folge, B, Sw, g, c){
+  const zeilen = [];
+  let x = (c === -1) ? g : 0;      // "fuge": Wand beginnt mit Fugenabstand
+  for(let i = 0; i < folge.length; i++){
+    const w = folge[i] === "B" ? B : Sw;
+    zeilen.push({nr:i+1, typ:folge[i], von:x, breite:w, bis:x + w});
+    x += w + g;
+  }
+  const ende = (c === -1) ? x : x - g;
+  return {zeilen:zeilen, ende:ende};
+}
+
+/* =====================================================================
+   DARSTELLUNG
+   ===================================================================== */
+const $ = id => document.getElementById(id);
+const nf = (n, d) => (isFinite(n) ? n : 0).toLocaleString("de-DE", {minimumFractionDigits:d, maximumFractionDigits:d});
+const mm  = n => nf(Math.round(n), 0);
+const mm1 = n => nf(n, 1);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function wandSVG(folge, B, Sw, g, c, L){
+  const H = L / 7;
+  const Hm = H * 0.30;
+  const sw = L / 1100;
+  const fs = L / 55;
+  let x = (c === -1) ? g : 0;
+  let bretter = "", ticks = "";
+
+  for(let i = 0; i < folge.length; i++){
+    const w = folge[i] === "B" ? B : Sw;
+    const farbe = folge[i] === "B" ? "var(--wide)" : "var(--narrow)";
+    bretter += '<rect x="' + x.toFixed(2) + '" y="0" width="' + w.toFixed(2) + '" height="' + H.toFixed(2) +
+               '" fill="' + farbe + '"></rect>';
+    if((i + 1) % 10 === 0 || i === 0){
+      const mid = x + w / 2;
+      ticks += '<line x1="' + mid.toFixed(2) + '" y1="' + H.toFixed(2) + '" x2="' + mid.toFixed(2) +
+               '" y2="' + (H + Hm * 0.34).toFixed(2) + '" stroke="var(--ink-faint)" stroke-width="' + sw.toFixed(2) + '"></line>' +
+               '<text x="' + mid.toFixed(2) + '" y="' + (H + Hm * 0.92).toFixed(2) + '" fill="var(--ink-faint)" ' +
+               'font-size="' + fs.toFixed(1) + '" font-family="IBM Plex Mono, monospace" text-anchor="middle">' + (i + 1) + '</text>';
+    }
+    x += w + g;
+  }
+  return '<svg viewBox="0 0 ' + L.toFixed(1) + ' ' + (H + Hm).toFixed(1) + '" role="img" ' +
+         'aria-label="Ansicht der Wand mit ' + folge.length + ' Brettern">' +
+         '<rect x="0" y="0" width="' + L.toFixed(1) + '" height="' + H.toFixed(1) + '" fill="var(--ink)"></rect>' +
+         bretter + ticks + '</svg>';
+}
+
+function statusPill(txt, art){
+  return '<span class="pill ' + art + '"><span class="dot"></span>' + txt + '</span>';
+}
+
+function render(){
+  const B = S.B, Sw = S.S, c = S.randModus === "fuge" ? -1 : 1;
+  const wunsch = S.anteil / 100;
+  const out = $("output");
+
+  const gueltigeWaende = S.walls.filter(w => w.L > 0);
+  const listen = gueltigeWaende.map(w => kandidaten(w.L, B, Sw, S.gMin, S.gMax, c));
+  const res = gemeinsameFuge(listen, S.tolG, S.gZiel, wunsch);
+
+  /* ---- Kopfleiste ---- */
+  const barStatus = $("barStatus");
+  if(!res.ok){
+    $("barFuge").textContent = "–";
+    $("barBretter").textContent = "–";
+    barStatus.innerHTML = statusPill("keine gemeinsame Fuge", "bad");
+  }else{
+    $("barFuge").textContent = mm1(res.g) + " mm";
+    barStatus.innerHTML =
+      statusPill("Abweichung max. " + mm1(res.maxAbw) + " mm", res.maxAbw <= 0.2 ? "good" : "warn") +
+      statusPill(gueltigeWaende.length + " Wände gehen auf", "good");
+  }
+
+  /* ---- Kein Ergebnis ---- */
+  if(!res.ok){
+    const leer = listen.map((l, i) => l.length === 0 ? gueltigeWaende[i].name : null).filter(Boolean);
+    let hinweis;
+    if(leer.length){
+      hinweis = "Für <b>" + esc(leer.join(", ")) + "</b> gibt es im Fugenbereich " +
+                mm1(S.gMin) + "–" + mm1(S.gMax) + " mm überhaupt keine Aufteilung. " +
+                "Fugenbereich weiten oder die Wandlänge prüfen.";
+    }else if(res.minTol !== null && isFinite(res.minTol)){
+      hinweis = "Jede Wand für sich geht auf, aber nicht mit derselben Fuge. Nötig wären " +
+                "<b>±" + mm1(res.minTol) + " mm</b> Abweichung zwischen den Wänden – " +
+                "eingestellt sind ±" + mm1(S.tolG) + " mm.";
+    }else{
+      hinweis = "Trage mindestens eine Wandlänge ein.";
+    }
+    out.innerHTML = '<div class="empty"><strong>Keine gemeinsame Fuge gefunden</strong><p>' + hinweis + '</p>' +
+      (res.minTol !== null && isFinite(res.minTol) && !leer.length
+        ? '<p style="margin-top:12px"><button type="button" class="primary" id="btnTolFix">Toleranz auf ' +
+          mm1(Math.ceil(res.minTol * 10) / 10) + ' mm setzen</button></p>' : '') +
+      '</div>';
+    const fix = $("btnTolFix");
+    if(fix) fix.addEventListener("click", () => {
+      S.tolG = Math.ceil(res.minTol * 10) / 10;
+      $("tolG").value = S.tolG; $("tolGOut").textContent = nf(S.tolG, 1);
+      speichern(); render();
+    });
+    speichern();
+    return;
+  }
+
+  /* ---- Auswahl je Wand, ggf. mit Handauswahl ---- */
+  const gewaehlt = gueltigeWaende.map((w, i) => {
+    const liste = listen[i];
+    const ov = w.pick;
+    if(ov){
+      const treffer = liste.find(k => k.nb === ov.nb && k.ns === ov.ns);
+      if(treffer && Math.abs(treffer.g - res.g) <= S.tolG + 1e-9) return treffer;
+    }
+    return res.treffer[i];
+  });
+
+  let sumB = 0, sumS = 0;
+  gewaehlt.forEach(k => { sumB += k.nb; sumS += k.ns; });
+  $("barBretter").textContent = (sumB + sumS) + "";
+
+  /* ---- Gesamtübersicht ---- */
+  let html = S.istBeispiel
+    ? '<div class="beispiel-banner"><b>Beispiel</b><span>Eingetragen sind Platzhalter: L&auml;rche 140/95&nbsp;mm ' +
+      'an einem Baukörper von 8,40&nbsp;&times;&nbsp;6,20&nbsp;m. Sobald ihr eure echten Ma&szlig;e kennt, ' +
+      'hier &uuml;berschreiben &ndash; die Eingaben bleiben in diesem Browser gespeichert.</span></div>'
+    : '';
+  html += '<div class="result"><div class="result-head"><h3>Materialbedarf</h3>' +
+    '<span class="len">' + gueltigeWaende.length + ' Wandabschnitte &middot; ' +
+    mm(gueltigeWaende.reduce((a, w) => a + w.L, 0)) + ' mm gesamt</span></div><div class="stats">' +
+    '<div class="stat"><div class="k"><span class="swatch sw-wide"></span>Breit ' + mm(B) + ' mm</div><div class="v">' + sumB + '<small>Stk</small></div></div>' +
+    '<div class="stat"><div class="k"><span class="swatch sw-narrow"></span>Schmal ' + mm(Sw) + ' mm</div><div class="v">' + sumS + '<small>Stk</small></div></div>' +
+    '<div class="stat"><div class="k">Anteil breit</div><div class="v">' + nf(100 * sumB / Math.max(1, sumB + sumS), 0) + '<small>%</small></div></div>' +
+    '<div class="stat"><div class="k">Fuge</div><div class="v">' + mm1(res.g) + '<small>mm</small></div></div>' +
+    '</div><p class="note">Stückzahlen ohne Verschnitt und ohne Reserve. Für die Bestellung je nach ' +
+    'Wandhöhe und Lieferlänge aufschlagen &ndash; üblich sind 5&nbsp;% plus zwei Bretter je Sorte für Fehlschnitte.</p></div>';
+
+  /* ---- Karten je Wand ---- */
+  gueltigeWaende.forEach((w, i) => {
+    const k = gewaehlt[i];
+    const m = muster(k.nb, k.ns, S.maxRun, (S.seed >>> 0) + i * 7919);
+    const a = anriss(m.folge, B, Sw, k.g, c);
+    const dg = k.g - res.g;
+    const fehler = Math.abs(a.ende - w.L);
+
+    html += '<div class="result"><div class="result-head"><h3>' + esc(w.name || ("Wand " + (i + 1))) + '</h3>' +
+      '<span class="len">' + mm(w.L) + ' mm</span></div>';
+
+    html += '<div class="stats">' +
+      '<div class="stat"><div class="k"><span class="swatch sw-wide"></span>Breit</div><div class="v">' + k.nb + '<small>Stk</small></div></div>' +
+      '<div class="stat"><div class="k"><span class="swatch sw-narrow"></span>Schmal</div><div class="v">' + k.ns + '<small>Stk</small></div></div>' +
+      '<div class="stat"><div class="k">Fuge exakt</div><div class="v">' + mm1(k.g) + '<small>mm</small></div></div>' +
+      '<div class="stat"><div class="k">gegen Nachbarwand</div><div class="v" style="color:' +
+        (Math.abs(dg) <= 0.2 ? "var(--ok)" : "var(--narrow)") + '">' +
+        (dg >= 0 ? "+" : "−") + mm1(Math.abs(dg)) + '<small>mm</small></div></div>' +
+      '<div class="stat"><div class="k">Restmaß</div><div class="v" style="color:' +
+        (fehler < 0.5 ? "var(--ok)" : "var(--alarm)") + '">' + mm1(fehler) + '<small>mm</small></div></div>' +
+      '</div>';
+
+    html += '<div class="viz">' + wandSVG(m.folge, B, Sw, k.g, c, w.L) +
+      '<div class="legend"><span><span class="swatch sw-wide"></span>' + k.nb + ' × ' + mm(B) + ' mm</span>' +
+      '<span><span class="swatch sw-narrow"></span>' + k.ns + ' × ' + mm(Sw) + ' mm</span>' +
+      '<span>' + (k.nb + k.ns - c) + ' Fugen à ' + mm1(k.g) + ' mm</span>' +
+      '<span>Muster-Nr. ' + ((S.seed >>> 0) + i * 7919) + '</span></div>' +
+      (m.aufgeweicht ? '<p class="note" style="color:var(--narrow)">Bei diesem Verhältnis sind bis zu ' +
+        m.limit + ' gleiche Bretter in Folge unvermeidbar.</p>' : '') + '</div>';
+
+    /* Anrissliste */
+    let rows = "";
+    a.zeilen.forEach(z => {
+      rows += '<tr><td>' + z.nr + '</td><td class="' + (z.typ === "B" ? "tag-w" : "tag-n") + '">' +
+        (z.typ === "B" ? "breit" : "schmal") + '</td><td>' + mm(z.von) + '</td><td>' + mm(z.bis) +
+        '</td><td>' + mm(z.breite) + '</td></tr>';
+    });
+    html += '<details class="anriss"><summary>Anrissliste &middot; ' + a.zeilen.length +
+      ' Bretter, Maße ab linker Wandkante</summary><div class="tablewrap"><table>' +
+      '<thead><tr><th>Nr.</th><th>Brett</th><th>Kante links</th><th>Kante rechts</th><th>Breite</th></tr></thead>' +
+      '<tbody>' + rows + '</tbody>' +
+      '<tfoot><tr><td colspan="3" style="border-top:1px solid var(--rule-strong);padding-top:7px">Kontrollmaß Wandende</td>' +
+      '<td style="border-top:1px solid var(--rule-strong);padding-top:7px">' + mm(a.ende) + '</td>' +
+      '<td style="border-top:1px solid var(--rule-strong);padding-top:7px">soll ' + mm(w.L) + '</td></tr></tfoot>' +
+      '</table></div></details>';
+
+    /* Alternativen mit derselben Fuge */
+    const alts = listen[i].filter(x => Math.abs(x.g - res.g) <= S.tolG + 1e-9 && !(x.nb === k.nb && x.ns === k.ns))
+                          .sort((x, y) => Math.abs(x.anteil - wunsch) - Math.abs(y.anteil - wunsch))
+                          .slice(0, 4);
+    if(alts.length){
+      html += '<details class="anriss"><summary>' + alts.length +
+        ' andere Aufteilungen mit derselben Fuge</summary><div class="alts" style="padding:4px 13px 11px">';
+      alts.forEach(x => {
+        html += '<div class="altrow"><span class="tag-w">' + x.nb + ' breit</span>' +
+          '<span class="tag-n">' + x.ns + ' schmal</span>' +
+          '<span style="color:var(--ink-soft)">Fuge ' + mm1(x.g) + ' mm</span>' +
+          '<span style="color:var(--ink-faint)">' + nf(x.anteil * 100, 0) + ' % breit</span>' +
+          '<button type="button" data-wall="' + i + '" data-nb="' + x.nb + '" data-ns="' + x.ns + '">übernehmen</button></div>';
+      });
+      if(w.pick) html += '<div class="altrow"><button type="button" data-wall="' + i + '" data-clear="1">automatische Wahl wiederherstellen</button></div>';
+      html += '</div></details>';
+    }
+    html += '</div>';
+  });
+
+  out.innerHTML = html;
+
+  out.querySelectorAll("button[data-wall]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const idx = +btn.dataset.wall;
+      const ziel = S.walls.filter(x => x.L > 0)[idx];
+      if(!ziel) return;
+      if(btn.dataset.clear) delete ziel.pick;
+      else ziel.pick = {nb:+btn.dataset.nb, ns:+btn.dataset.ns};
+      speichern(); render();
+    });
+  });
+  speichern();
+}
+
+/* =====================================================================
+   WANDLISTE
+   ===================================================================== */
+function renderWalls(){
+  const box = $("walls");
+  box.innerHTML = "";
+  S.walls.forEach((w, i) => {
+    const row = document.createElement("div");
+    row.className = "wallrow";
+    row.innerHTML =
+      '<input type="text" id="wn' + i + '" value="' + esc(w.name || "") + '" placeholder="Bezeichnung" aria-label="Name der Wand ' + (i+1) + '">' +
+      '<input type="number" id="wl' + i + '" value="' + w.L + '" min="0" max="100000" step="1" aria-label="Länge in Millimeter">' +
+      '<button type="button" class="ghost" data-del="' + i + '" title="Wand entfernen" aria-label="Wand entfernen">×</button>';
+    box.appendChild(row);
+  });
+  box.querySelectorAll("input[type=text]").forEach((el, i) => {
+    el.addEventListener("input", () => { S.walls[i].name = el.value; S.istBeispiel = false; speichern(); render(); });
+  });
+  box.querySelectorAll("input[type=number]").forEach((el, i) => {
+    el.addEventListener("input", () => {
+      const v = parseFloat(el.value);
+      S.walls[i].L = isFinite(v) ? v : 0;
+      S.istBeispiel = false;
+      delete S.walls[i].pick;
+      speichern(); render();
+    });
+  });
+  box.querySelectorAll("button[data-del]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      S.walls.splice(+btn.dataset.del, 1);
+      S.istBeispiel = false;
+      if(!S.walls.length) S.walls.push({name:"Wand 1", L:0});
+      renderWalls(); render();
+    });
+  });
+}
+
+/* =====================================================================
+   EINGABEN VERDRAHTEN
+   ===================================================================== */
+function zahlFeld(id, key, nachher){
+  const el = $(id);
+  el.value = S[key];
+  el.addEventListener("input", () => {
+    const v = parseFloat(el.value);
+    if(!isFinite(v)) return;
+    S[key] = v;
+    S.istBeispiel = false;
+    S.walls.forEach(w => delete w.pick);
+    if(nachher) nachher(v);
+    speichern(); render();
+  });
+}
+
+function init(){
+  laden();
+
+  zahlFeld("wBreit", "B");
+  zahlFeld("wSchmal", "S");
+  zahlFeld("gMin", "gMin");
+  zahlFeld("gZiel", "gZiel");
+  zahlFeld("gMax", "gMax");
+  zahlFeld("maxRun", "maxRun");
+  zahlFeld("seed", "seed");
+  zahlFeld("tolG", "tolG", v => { $("tolGOut").textContent = nf(v, 1); });
+  zahlFeld("anteil", "anteil", v => { $("anteilOut").textContent = nf(v, 0); });
+
+  $("tolGOut").textContent = nf(S.tolG, 1);
+  $("anteilOut").textContent = nf(S.anteil, 0);
+
+  const rm = $("randModus");
+  rm.value = S.randModus;
+  rm.addEventListener("change", () => {
+    S.randModus = rm.value;
+    S.istBeispiel = false;
+    S.walls.forEach(w => delete w.pick);
+    speichern(); render();
+  });
+
+  $("btnAddWall").addEventListener("click", () => {
+    S.walls.push({name:"Wand " + (S.walls.length + 1), L:5000});
+    S.istBeispiel = false;
+    renderWalls(); render();
+  });
+
+  $("btnSeed").addEventListener("click", () => {
+    S.seed = Math.floor(Math.random() * 100000);
+    $("seed").value = S.seed;
+    speichern(); render();
+  });
+
+  $("btnReset").addEventListener("click", () => {
+    S = JSON.parse(JSON.stringify(BEISPIEL));
+    try{ localStorage.removeItem(KEY); }catch(e){}
+    ["wBreit","wSchmal","gMin","gZiel","gMax","maxRun","seed","tolG","anteil"].forEach(id => {
+      const key = {wBreit:"B", wSchmal:"S"}[id] || id;
+      $(id).value = S[key];
+    });
+    $("randModus").value = S.randModus;
+    $("tolGOut").textContent = nf(S.tolG, 1);
+    $("anteilOut").textContent = nf(S.anteil, 0);
+    renderWalls(); render();
+  });
+
+  $("btnPrint").addEventListener("click", () => window.print());
+
+  $("btnTheme").addEventListener("click", () => {
+    const jetzt = document.documentElement.getAttribute("data-theme");
+    const dunkelAktiv = jetzt ? jetzt === "dark"
+      : window.matchMedia("(prefers-color-scheme: dark)").matches;
+    document.documentElement.setAttribute("data-theme", dunkelAktiv ? "light" : "dark");
+  });
+
+  renderWalls();
+  render();
+}
+
+if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+else init();
+
+})();
+</script>
