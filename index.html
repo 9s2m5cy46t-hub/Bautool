@@ -318,14 +318,6 @@ tbody tr:nth-child(even){background:var(--surface-2)}
   border:1px solid var(--rule);border-left:3px solid var(--wide);border-radius:var(--r);
   padding:11px 13px;margin:10px 0;overflow-x:auto;white-space:nowrap;color:var(--ink);
 }
-.beispiel-banner{
-  display:flex;gap:10px;align-items:flex-start;
-  background:var(--narrow-soft);border:1px solid var(--narrow);border-radius:var(--r);
-  padding:10px 13px;margin-top:20px;font-size:.86rem;
-}
-.beispiel-banner b{color:var(--narrow);flex:none;font-family:"IBM Plex Mono",monospace;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;padding-top:2px}
-.beispiel-banner span{font-family:"Source Serif 4",Georgia,serif}
-.beispiel-banner{margin-top:0;margin-bottom:22px}
 @media (prefers-reduced-motion:no-preference){
   .result{animation:rise .32s ease-out both}
   @keyframes rise{from{opacity:.4;transform:translateY(4px)}to{opacity:1;transform:none}}
@@ -419,14 +411,15 @@ tbody tr:nth-child(even){background:var(--surface-2)}
 
     <div class="panel">
       <h2><span class="stepnum">3</span>L&auml;nge der W&auml;nde</h2>
-      <div class="wallhead"><span>Wand</span><span>L&auml;nge &middot; mm</span><span></span></div>
+      <div class="wallhead"><span>Wand</span><span>L&auml;nge &middot; m</span><span></span></div>
       <div class="walls" id="walls"></div>
       <div class="addrow">
         <button type="button" id="btnAddWall">+ Wand</button>
-        <button type="button" id="btnReset" class="ghost">Beispielwerte zur&uuml;ckholen</button>
+        <button type="button" id="btnReset" class="ghost">Alles zur&uuml;cksetzen</button>
       </div>
-      <p class="note">Ein Wandabschnitt neben einem Fenster ist hier eine eigene &bdquo;Wand&ldquo;.
-        L&auml;nge = das St&uuml;ck, das wirklich beplankt wird, Eckbretter und Leibungen bereits abgezogen.</p>
+      <p class="note">L&auml;nge in Metern, Komma erlaubt &ndash; also <b>8,40</b> f&uuml;r acht Meter vierzig.
+        Gemeint ist das St&uuml;ck, das wirklich beplankt wird, Eckbretter und Leibungen bereits abgezogen.
+        Ein Wandabschnitt neben einem Fenster ist dabei eine eigene &bdquo;Wand&ldquo;.</p>
     </div>
 
     <div class="panel">
@@ -516,18 +509,17 @@ tbody tr:nth-child(even){background:var(--surface-2)}
 /* =====================================================================
    ZUSTAND
    ===================================================================== */
-const BEISPIEL = {
-  B:140, S:95, gMin:8, gZiel:12, gMax:18,
+const VORGABE = {
+  B:150, S:50, gMin:8, gZiel:10, gMax:15,
   randModus:"brett", tolG:0.4, anteil:50, maxRun:2, seed:1874,
   walls:[
-    {name:"Giebel Süd", L:8400},
-    {name:"Traufe Ost",     L:6200},
-    {name:"Giebel Nord",    L:8400},
-    {name:"Traufe West",    L:6200}
-  ],
-  istBeispiel:true
+    {name:"", L:0},
+    {name:"", L:0},
+    {name:"", L:0},
+    {name:"", L:0}
+  ]
 };
-let S = JSON.parse(JSON.stringify(BEISPIEL));
+let S = JSON.parse(JSON.stringify(VORGABE));
 
 const KEY = "wilde-schalung-v1";
 function speichern(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
@@ -536,7 +528,7 @@ function laden(){
     const raw = localStorage.getItem(KEY);
     if(!raw) return;
     const o = JSON.parse(raw);
-    if(o && Array.isArray(o.walls) && o.walls.length) S = Object.assign({}, BEISPIEL, o);
+    if(o && Array.isArray(o.walls) && o.walls.length) S = Object.assign({}, VORGABE, o);
   }catch(e){}
 }
 
@@ -765,6 +757,15 @@ function anriss(folge, B, Sw, g, c){
 const $ = id => document.getElementById(id);
 const nf = (n, d) => (isFinite(n) ? n : 0).toLocaleString("de-DE", {minimumFractionDigits:d, maximumFractionDigits:d});
 const mm  = n => nf(Math.round(n), 0);
+/** Millimeter als Meterangabe, wie man sie auf dem Plan liest. */
+const meter = n => nf(n / 1000, 2);
+/** Meter-Eingabe entgegennehmen: Komma wie Punkt, Ergebnis in ganzen Millimetern. */
+function mmAusEingabe(txt){
+  const roh = String(txt).trim().replace(/\s/g, "").replace(",", ".");
+  if(roh === "") return 0;
+  const v = parseFloat(roh);
+  return isFinite(v) && v > 0 ? Math.round(v * 1000) : 0;
+}
 const mm1 = n => nf(n, 1);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
@@ -829,7 +830,9 @@ function render(){
   if(!res.ok){
     $("barFuge").textContent = "–";
     $("barBretter").textContent = "–";
-    barStatus.innerHTML = statusPill("keine gemeinsame Fuge", "bad");
+    barStatus.innerHTML = gueltigeWaende.length
+      ? statusPill("keine gemeinsame Fuge", "bad")
+      : statusPill("Wandlänge fehlt noch", "warn");
   }else{
     $("barFuge").textContent = mm1(res.g) + " mm";
     barStatus.innerHTML =
@@ -839,7 +842,8 @@ function render(){
 
   /* ---- Kein Ergebnis ---- */
   if(!res.ok){
-    const leer = listen.map((l, i) => l.length === 0 ? gueltigeWaende[i].name : null).filter(Boolean);
+    const leer = listen.map((l, i) => l.length === 0
+      ? (gueltigeWaende[i].name || ("Wand " + (i + 1))) : null).filter(Boolean);
     let hinweis;
     if(leer.length){
       hinweis = "Für <b>" + esc(leer.join(", ")) + "</b> gibt es im Fugenbereich " +
@@ -850,9 +854,9 @@ function render(){
                 "<b>±" + mm1(res.minTol) + " mm</b> Abweichung zwischen den Wänden – " +
                 "eingestellt sind ±" + mm1(S.tolG) + " mm.";
     }else{
-      hinweis = "Trage mindestens eine Wandlänge ein.";
+      hinweis = "Trage bei Schritt 3 die Länge deiner ersten Wand ein – in Metern, zum Beispiel <b>8,40</b>.";
     }
-    out.innerHTML = '<div class="empty"><strong>Keine gemeinsame Fuge gefunden</strong><p>' + hinweis + '</p>' +
+    out.innerHTML = '<div class="empty"><strong>' + (leer.length || res.grund !== "leer" ? "Keine gemeinsame Fuge gefunden" : "Noch keine Wandlänge eingetragen") + '</strong><p>' + hinweis + '</p>' +
       (res.minTol !== null && isFinite(res.minTol) && !leer.length
         ? '<p style="margin-top:12px"><button type="button" class="primary" id="btnTolFix">Toleranz auf ' +
           mm1(Math.ceil(res.minTol * 10) / 10) + ' mm setzen</button></p>' : '') +
@@ -884,16 +888,12 @@ function render(){
   $("barBretter").textContent = (sumB + sumS) + "";
 
   /* ---- Bedarf auf einen Blick ---- */
-  let html = S.istBeispiel
-    ? '<div class="beispiel-banner"><b>Beispiel</b><span>Eingetragen sind Platzhalter: L&auml;rche 140/95&nbsp;mm ' +
-      'an einem Baukörper von 8,40&nbsp;&times;&nbsp;6,20&nbsp;m. Sobald ihr eure echten Ma&szlig;e kennt, ' +
-      'hier &uuml;berschreiben &ndash; die Eingaben bleiben in diesem Browser gespeichert.</span></div>'
-    : '';
+  let html = "";
 
   const reserve = n => Math.ceil(n * 1.05) + 2;
   html += '<div class="bedarf" id="bedarf">' +
     '<div class="kopf"><span>Das brauchst du</span><span>' + gueltigeWaende.length +
-      ' Wandabschnitte &middot; ' + mm(gueltigeWaende.reduce((a, w) => a + w.L, 0)) + ' mm</span></div>' +
+      ' Wandabschnitte &middot; ' + meter(gueltigeWaende.reduce((a, w) => a + w.L, 0)) + ' m gesamt</span></div>' +
     '<div class="zeilen">' +
       '<div class="z"><div class="k"><span class="swatch sw-wide"></span>Breite Bretter à ' + mm(B) + ' mm</div>' +
         '<div class="gross">' + sumB + '<small>Stück</small></div></div>' +
@@ -918,7 +918,7 @@ function render(){
     const fehler = Math.abs(a.ende - w.L);
 
     html += '<div class="result"><div class="result-head"><h3>' + esc(w.name || ("Wand " + (i + 1))) + '</h3>' +
-      '<span class="len">' + mm(w.L) + ' mm</span></div>';
+      '<span class="len">' + meter(w.L) + ' m</span></div>';
 
     html += '<div class="stats">' +
       '<div class="stat"><div class="k"><span class="swatch sw-wide"></span>Breit</div><div class="v">' + k.nb + '<small>Stk</small></div></div>' +
@@ -1026,7 +1026,6 @@ function renderProben(erste, B, Sw, g, c){
     b.innerHTML = streifenSVG(folge, B, Sw, fuge) + '<span class="nr">Nr. ' + (sd >>> 0) + '</span>';
     b.addEventListener("click", () => {
       S.seed = sd >>> 0;
-      S.istBeispiel = false;
       $("seed").value = S.seed;
       speichern(); render();
     });
@@ -1044,27 +1043,29 @@ function renderWalls(){
     const row = document.createElement("div");
     row.className = "wallrow";
     row.innerHTML =
-      '<input type="text" id="wn' + i + '" value="' + esc(w.name || "") + '" placeholder="Bezeichnung" aria-label="Name der Wand ' + (i+1) + '">' +
-      '<input type="number" id="wl' + i + '" value="' + w.L + '" min="0" max="100000" step="1" aria-label="Länge in Millimeter">' +
+      '<input type="text" id="wn' + i + '" value="' + esc(w.name || "") + '" placeholder="z. B. Giebel" aria-label="Name der Wand ' + (i+1) + '">' +
+      '<input type="text" id="wl' + i + '" class="mlen" inputmode="decimal" value="' + (w.L > 0 ? meter(w.L) : "") +
+        '" placeholder="0,00" aria-label="Länge der Wand ' + (i+1) + ' in Metern">' +
       '<button type="button" class="ghost" data-del="' + i + '" title="Wand entfernen" aria-label="Wand entfernen">×</button>';
     box.appendChild(row);
   });
-  box.querySelectorAll("input[type=text]").forEach((el, i) => {
-    el.addEventListener("input", () => { S.walls[i].name = el.value; S.istBeispiel = false; speichern(); render(); });
+  box.querySelectorAll("input:not(.mlen)").forEach((el, i) => {
+    el.addEventListener("input", () => { S.walls[i].name = el.value; speichern(); render(); });
   });
-  box.querySelectorAll("input[type=number]").forEach((el, i) => {
+  box.querySelectorAll("input.mlen").forEach((el, i) => {
     el.addEventListener("input", () => {
-      const v = parseFloat(el.value);
-      S.walls[i].L = isFinite(v) ? v : 0;
-      S.istBeispiel = false;
+      S.walls[i].L = mmAusEingabe(el.value);
       delete S.walls[i].pick;
       speichern(); render();
+    });
+    // Erst beim Verlassen sauber ausschreiben, sonst springt der Cursor beim Tippen
+    el.addEventListener("blur", () => {
+      el.value = S.walls[i].L > 0 ? meter(S.walls[i].L) : "";
     });
   });
   box.querySelectorAll("button[data-del]").forEach(btn => {
     btn.addEventListener("click", () => {
       S.walls.splice(+btn.dataset.del, 1);
-      S.istBeispiel = false;
       if(!S.walls.length) S.walls.push({name:"Wand 1", L:0});
       renderWalls(); render();
     });
@@ -1081,7 +1082,6 @@ function zahlFeld(id, key, nachher){
     const v = parseFloat(el.value);
     if(!isFinite(v)) return;
     S[key] = v;
-    S.istBeispiel = false;
     S.walls.forEach(w => delete w.pick);
     if(nachher) nachher(v);
     speichern(); render();
@@ -1108,21 +1108,18 @@ function init(){
   rm.value = S.randModus;
   rm.addEventListener("change", () => {
     S.randModus = rm.value;
-    S.istBeispiel = false;
     S.walls.forEach(w => delete w.pick);
     speichern(); render();
   });
 
   $("btnAddWall").addEventListener("click", () => {
-    S.walls.push({name:"Wand " + (S.walls.length + 1), L:5000});
-    S.istBeispiel = false;
+    S.walls.push({name:"", L:0});
     renderWalls(); render();
   });
 
   $("btnSeed").addEventListener("click", () => {
     S.proben = [0, 1, 2].map(() => Math.floor(Math.random() * 100000));
     S.seed = S.proben[0];
-    S.istBeispiel = false;
     $("seed").value = S.seed;
     speichern(); render();
   });
@@ -1141,7 +1138,7 @@ function init(){
   });
 
   $("btnReset").addEventListener("click", () => {
-    S = JSON.parse(JSON.stringify(BEISPIEL));
+    S = JSON.parse(JSON.stringify(VORGABE));
     try{ localStorage.removeItem(KEY); }catch(e){}
     ["wBreit","wSchmal","gMin","gZiel","gMax","maxRun","seed","tolG","anteil"].forEach(id => {
       const key = {wBreit:"B", wSchmal:"S"}[id] || id;
