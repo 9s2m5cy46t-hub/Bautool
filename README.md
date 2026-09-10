@@ -4,6 +4,23 @@ Rechner für senkrechte Holz-Brettschalung aus zwei Brettbreiten – ein Werkzeu
 keine Bibliothek. Öffne `index.html` im Browser, fertig; es lädt nichts nach
 außer den Schriften und rechnet vollständig lokal.
 
+## Aufbau
+
+| Datei | Zweck |
+|---|---|
+| `index.html` | Quelle. Ohne `<!doctype>`/`<html>`/`<body>`, weil die Artifact-Ansicht diesen Rahmen selbst setzt. |
+| `docs/index.html` | Erzeugt. Eigenständige Fassung mit Rahmen-Tags, die GitHub Pages ausliefert. |
+| `build.sh` | Erzeugt `docs/index.html` aus `index.html`. Nach jeder Änderung ausführen. |
+
+Ohne den Rahmen liefe die Seite direkt ausgeliefert im Quirks Mode – deshalb die
+zweite Fassung statt eines Symlinks.
+
+### Veröffentlichung über GitHub Pages
+
+Repo-Einstellungen → *Pages* → Source: **Deploy from a branch**, Branch **main**,
+Ordner **/docs**. Das Repo muss dafür öffentlich sein (oder GitHub Pro).
+Adresse danach: `https://9s2m5cy46t-hub.github.io/Bautool/`
+
 ## Wofür
 
 Eine „wilde" Fassade mischt breite und schmale Bretter in unregelmäßiger Folge.
