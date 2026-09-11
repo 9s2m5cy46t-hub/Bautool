@@ -16,6 +16,12 @@
   --rule-strong:#A9A69B;
   --wide:#2F5D50;
   --wide-soft:#D6E0DB;
+  /* Brettfarben: Flächen in der Wandansicht, davon getrennt die Textvarianten */
+  --brett-breit:#CE9A58;
+  --brett-schmal:#646A68;
+  --fugengrund:#141A18;
+  --label-breit:#8A5A1F;
+  --label-schmal:#555B59;
   --narrow:#B08324;
   --narrow-soft:#EDE0C4;
   --alarm:#9B3B2E;
@@ -37,6 +43,11 @@
     --rule-strong:#4A544F;
     --wide:#57A18B;
     --wide-soft:#22352F;
+    --brett-breit:#D9A863;
+    --brett-schmal:#767C7A;
+    --fugengrund:#0A0E0D;
+    --label-breit:#D9A863;
+    --label-schmal:#AAB0AE;
     --narrow:#D9A93F;
     --narrow-soft:#332A18;
     --alarm:#D4705C;
@@ -56,6 +67,11 @@
   --rule-strong:#4A544F;
   --wide:#57A18B;
   --wide-soft:#22352F;
+  --brett-breit:#D9A863;
+  --brett-schmal:#767C7A;
+  --fugengrund:#0A0E0D;
+  --label-breit:#D9A863;
+  --label-schmal:#AAB0AE;
   --narrow:#D9A93F;
   --narrow-soft:#332A18;
   --alarm:#D4705C;
@@ -212,8 +228,8 @@ input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visi
 }
 input[type=range]{width:100%;accent-color:var(--wide)}
 .swatch{display:inline-block;width:10px;height:10px;border-radius:2px;vertical-align:baseline;margin-right:5px}
-.sw-wide{background:var(--wide)}
-.sw-narrow{background:var(--narrow)}
+.sw-wide{background:var(--brett-breit)}
+.sw-narrow{background:var(--brett-schmal)}
 
 button{
   cursor:pointer;background:var(--surface-2);border:1px solid var(--rule-strong);
@@ -286,8 +302,8 @@ th{
 }
 td:first-child,th:first-child{text-align:left}
 tbody tr:nth-child(even){background:var(--surface-2)}
-.tag-w{color:var(--wide);font-weight:600}
-.tag-n{color:var(--narrow);font-weight:600}
+.tag-w{color:var(--label-breit);font-weight:600}
+.tag-n{color:var(--label-schmal);font-weight:600}
 
 .alts{margin-top:12px}
 .alts .altrow{
@@ -779,7 +795,7 @@ function wandSVG(folge, B, Sw, g, c, L){
 
   for(let i = 0; i < folge.length; i++){
     const w = folge[i] === "B" ? B : Sw;
-    const farbe = folge[i] === "B" ? "var(--wide)" : "var(--narrow)";
+    const farbe = folge[i] === "B" ? "var(--brett-breit)" : "var(--brett-schmal)";
     bretter += '<rect x="' + x.toFixed(2) + '" y="0" width="' + w.toFixed(2) + '" height="' + H.toFixed(2) +
                '" fill="' + farbe + '"></rect>';
     if((i + 1) % 10 === 0 || i === 0){
@@ -793,7 +809,7 @@ function wandSVG(folge, B, Sw, g, c, L){
   }
   return '<svg viewBox="0 0 ' + L.toFixed(1) + ' ' + (H + Hm).toFixed(1) + '" role="img" ' +
          'aria-label="Ansicht der Wand mit ' + folge.length + ' Brettern">' +
-         '<rect x="0" y="0" width="' + L.toFixed(1) + '" height="' + H.toFixed(1) + '" fill="var(--ink)"></rect>' +
+         '<rect x="0" y="0" width="' + L.toFixed(1) + '" height="' + H.toFixed(1) + '" fill="var(--fugengrund)"></rect>' +
          bretter + ticks + '</svg>';
 }
 
@@ -803,13 +819,13 @@ function streifenSVG(folge, B, Sw, g){
   for(let i = 0; i < folge.length; i++){
     const w = folge[i] === "B" ? B : Sw;
     rects += '<rect x="' + x.toFixed(2) + '" y="0" width="' + w.toFixed(2) + '" height="100" fill="' +
-             (folge[i] === "B" ? "var(--wide)" : "var(--narrow)") + '"></rect>';
+             (folge[i] === "B" ? "var(--brett-breit)" : "var(--brett-schmal)") + '"></rect>';
     x += w + g;
   }
   const ges = Math.max(1, x - g);
   return '<svg viewBox="0 0 ' + ges.toFixed(1) + ' 100" preserveAspectRatio="none" ' +
          'style="height:34px" aria-hidden="true">' +
-         '<rect x="0" y="0" width="' + ges.toFixed(1) + '" height="100" fill="var(--ink)"></rect>' + rects + '</svg>';
+         '<rect x="0" y="0" width="' + ges.toFixed(1) + '" height="100" fill="var(--fugengrund)"></rect>' + rects + '</svg>';
 }
 
 function statusPill(txt, art){
