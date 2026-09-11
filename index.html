@@ -1,3 +1,8 @@
+<!--
+  Wilde Schalung - gerechnet und gebaut für Tobias.
+  Wer bis hierher liest, hat den Quelltext geöffnet und darf das Weitere wissen:
+  den Titel oben dreimal antippen.
+-->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Wilde Schalung</title>
@@ -107,6 +112,18 @@ header.top{
   font-size:1.02rem;color:var(--ink-soft);max-width:56ch;margin-top:9px;
 }
 .brand-actions{display:flex;gap:6px;flex:none;align-self:flex-end}
+[hidden]{display:none !important}
+.brand h1{cursor:default;-webkit-user-select:none;user-select:none}
+.richtspruch{
+  margin-top:11px;padding-left:11px;border-left:2px solid var(--brett-breit);
+  font-family:"Source Serif 4",Georgia,serif;font-style:italic;
+  font-size:.96rem;color:var(--ink-soft);max-width:46ch;
+  opacity:0;transform:translateY(-3px);transition:opacity .5s ease,transform .5s ease;
+}
+.richtspruch.zeig{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){
+  .richtspruch{transition:none}
+}
 .eyebrow{
   font-family:"IBM Plex Mono",ui-monospace,monospace;
   font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);
@@ -360,7 +377,7 @@ tbody tr:nth-child(even){background:var(--surface-2)}
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 
   /* Bedienelemente haben auf Papier nichts verloren */
-  header.top .brand-actions, .bar, .input-col, .foot,
+  header.top .brand-actions, .bar, .input-col, .foot, .richtspruch,
   .gotoresult, details[data-druck="alt"], .probe, #proben,
   button, input[type=range]{display:none !important}
 
@@ -436,6 +453,9 @@ tbody tr:nth-child(even){background:var(--surface-2)}
     <p class="sub">Findet die Kombination aus breiten und schmalen Brettern, mit der jede Hauswand
       restlos aufgeht &ndash; und zwar mit <em>einer</em> Fugenbreite f&uuml;r alle Seiten, damit an
       den Ecken nichts auff&auml;llt.</p>
+    <p class="richtspruch" id="richtspruch" hidden>
+      Holz und Fuge, Ma&szlig; und Riss &ndash;<br>f&uuml;r Tobias, ganz gewiss.
+    </p>
   </div>
   <div class="brand-actions">
     <button type="button" id="btnTheme" class="ghost" title="Hell / dunkel umschalten">◐ Ansicht</button>
@@ -1246,6 +1266,31 @@ function renderWalls(){
 }
 
 /* =====================================================================
+   RICHTSPRUCH  -  dreimal auf den Titel
+   ===================================================================== */
+function richtspruchBinden(){
+  const titel = document.querySelector(".brand h1");
+  const spruch = $("richtspruch");
+  if(!titel || !spruch) return;
+  let klicks = 0, ruhe = null, aus = null;
+
+  titel.addEventListener("click", () => {
+    klicks++;
+    clearTimeout(ruhe);
+    ruhe = setTimeout(() => { klicks = 0; }, 1400);
+    if(klicks < 3) return;
+    klicks = 0;
+    clearTimeout(aus);
+    spruch.hidden = false;
+    requestAnimationFrame(() => spruch.classList.add("zeig"));
+    aus = setTimeout(() => {
+      spruch.classList.remove("zeig");
+      setTimeout(() => { spruch.hidden = true; }, 600);
+    }, 9000);
+  });
+}
+
+/* =====================================================================
    EINGABEN VERDRAHTEN
    ===================================================================== */
 function zahlFeld(id, key, nachher){
@@ -1351,6 +1396,7 @@ function init(){
     document.documentElement.setAttribute("data-theme", dunkelAktiv ? "light" : "dark");
   });
 
+  richtspruchBinden();
   renderWalls();
   render();
 }
