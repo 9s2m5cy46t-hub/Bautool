@@ -338,9 +338,92 @@ tbody tr:nth-child(even){background:var(--surface-2)}
   .result{animation:rise .32s ease-out both}
   @keyframes rise{from{opacity:.4;transform:translateY(4px)}to{opacity:1;transform:none}}
 }
+/* ---------- Nur im Druck ---------- */
+.nurdruck{display:none}
+
 @media print{
-  .bar,.panel,.foot{break-inside:avoid}
-  body{background:#fff}
+  /* Immer helles Papier drucken, unabhaengig von der Ansicht am Bildschirm */
+  :root, :root[data-theme="dark"], :root:not([data-theme="light"]){
+    --paper:#fff; --surface:#fff; --surface-2:#F2F1EC;
+    --ink:#000; --ink-soft:#333; --ink-faint:#666;
+    --rule:#BBB; --rule-strong:#888;
+    --wide:#2F5D50; --wide-soft:#EAEFEC; --narrow:#8A6415; --narrow-soft:#F5EEDC;
+    --brett-breit:#CE9A58; --brett-schmal:#646A68; --fugengrund:#1A1A1A;
+    --label-breit:#7A4F1B; --label-schmal:#3A3E3D;
+    --alarm:#8A2F22; --alarm-soft:#F4E2DE; --ok:#2F5D50;
+    --shadow:none;
+  }
+  @page{margin:14mm 12mm}
+  html,body{background:#fff}
+  body{font-size:10.5pt}
+  /* Flaechenfarben muessen mitgedruckt werden, sonst fehlt die Wandansicht */
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+
+  /* Bedienelemente haben auf Papier nichts verloren */
+  header.top .brand-actions, .bar, .input-col, .foot,
+  .gotoresult, details[data-druck="alt"], .probe, #proben,
+  button, input[type=range]{display:none !important}
+
+  .wrap{max-width:none;padding:0;margin:0}
+  .cols{display:block;margin:0;gap:0}
+  header.top{padding-block:0 8px;border-bottom:1.5pt solid #000;display:block}
+  .brand .sub{display:none}
+  .brand h1{font-size:20pt}
+  .eyebrow{font-size:7pt;margin-bottom:3px}
+
+  /* Datenkopf mit den Eckwerten */
+  .druckkopf{display:block;margin:9px 0 14px;break-inside:avoid}
+  .druckkopf dl{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:7px 16px;margin:0;
+    font-family:"IBM Plex Mono",monospace;
+  }
+  .druckkopf dt{font-size:7pt;letter-spacing:.08em;text-transform:uppercase;color:#666}
+  .druckkopf dd{margin:1px 0 0;font-size:11pt;font-weight:600}
+
+  .bedarf{break-inside:avoid;border-width:1.5pt;margin-bottom:4mm}
+  .bedarf .kopf{background:#000 !important;color:#fff !important}
+  .bedarf .z .gross{font-size:17pt}
+  .bedarf .fuss{font-size:9pt}
+
+  /* Je Wand eine eigene Seite */
+  .result{break-inside:avoid;animation:none}
+  .result + .result{break-before:page}
+  .result-head{border-bottom-width:1.5pt}
+  .result-head h3{font-size:14pt}
+  .viz{break-inside:avoid;padding:6px}
+  .stats{break-inside:avoid}
+  .stat .v{font-size:12pt}
+
+  /* Anrisslisten: Kopfzeile auf jeder Seite wiederholen */
+  details[data-druck="anriss"]{break-inside:auto;border:none;margin-top:4mm}
+  details[data-druck="anriss"] > summary{
+    padding:0 0 4px;font-size:9pt;font-weight:600;border-bottom:1pt solid #000;
+  }
+  details[data-druck="anriss"] > summary::after,
+  details[data-druck="anriss"][open] > summary::after{content:"" !important}
+  .tablewrap{overflow:visible;border:none}
+  table{font-size:8.6pt}
+  thead{display:table-header-group}
+  tr{break-inside:avoid}
+  th{border-bottom:1pt solid #000;background:#fff}
+  tbody tr:nth-child(even){background:#F2F1EC}
+  th,td{padding:2.5px 8px}
+
+  /* Fussnote auf jedem Blatt */
+  .druckfuss{display:block;margin-top:5mm;padding-top:2mm;border-top:.5pt solid #999;
+    font-size:7.5pt;color:#666;font-family:"IBM Plex Mono",monospace}
+
+  /* --- Musterblatt: nur die Stilvorschlaege --- */
+  html.nur-muster .cols, html.nur-muster .foot, html.nur-muster #bedarf{display:none !important}
+  html.nur-muster #musterblatt{display:block}
+  #musterblatt .vorschlag{break-inside:avoid;margin-bottom:9mm}
+  #musterblatt .vorschlag h3{
+    font-size:11pt;margin-bottom:4px;display:flex;justify-content:space-between;
+    border-bottom:.5pt solid #999;padding-bottom:3px;
+  }
+  #musterblatt .vorschlag h3 span{font-family:"IBM Plex Mono",monospace;font-weight:400;color:#666;font-size:9pt}
+  #musterblatt .vorschlag svg{display:block;width:100%;height:32mm}
+  #musterblatt .hinweis{font-family:"Source Serif 4",Georgia,serif;font-size:9.5pt;color:#333;max-width:none}
 }
 </style>
 
@@ -356,9 +439,11 @@ tbody tr:nth-child(even){background:var(--surface-2)}
   </div>
   <div class="brand-actions">
     <button type="button" id="btnTheme" class="ghost" title="Hell / dunkel umschalten">◐ Ansicht</button>
-    <button type="button" id="btnPrint" class="ghost" title="Anrisslisten drucken">⎙ Drucken</button>
+    <button type="button" id="btnPrint" class="ghost" title="Plan mit Anrisslisten als PDF sichern">⎙ Plan als PDF</button>
   </div>
 </header>
+
+<div class="druckkopf nurdruck" id="druckkopf"></div>
 
 <div class="bar" id="bar">
   <div class="headline">
@@ -460,6 +545,7 @@ tbody tr:nth-child(even){background:var(--surface-2)}
       </div>
       <div class="addrow">
         <button type="button" id="btnSeed" class="primary">Drei neue Vorschl&auml;ge</button>
+        <button type="button" id="btnMusterPdf">Musterblatt als PDF</button>
       </div>
       <p class="note">Die Muster-Nr. merken: gleiche Nummer &rarr; exakt gleiche Brettfolge.
         Damit l&auml;sst sich die Liste jederzeit neu drucken, ohne dass die Fassade anders aussieht.</p>
@@ -475,6 +561,9 @@ tbody tr:nth-child(even){background:var(--surface-2)}
   <div class="output-col" id="output"></div>
 
 </div>
+
+<div class="nurdruck" id="musterblatt"></div>
+<div class="druckfuss nurdruck" id="druckfuss"></div>
 
 <div class="foot">
   <h2>Wie gerechnet wird</h2>
@@ -789,7 +878,7 @@ function wandSVG(folge, B, Sw, g, c, L){
   const H = L / 6.5;
   const Hm = H * 0.34;
   const sw = L / 1100;
-  const fs = L / 40;
+  const fs = L / 46;
   let x = (c === -1) ? g : 0;
   let bretter = "", ticks = "";
 
@@ -814,7 +903,7 @@ function wandSVG(folge, B, Sw, g, c, L){
 }
 
 /** Schmaler Musterstreifen ohne Bemassung - fuer die Stilproben. */
-function streifenSVG(folge, B, Sw, g){
+function streifenSVG(folge, B, Sw, g, hoehe){
   let x = 0, rects = "";
   for(let i = 0; i < folge.length; i++){
     const w = folge[i] === "B" ? B : Sw;
@@ -824,7 +913,7 @@ function streifenSVG(folge, B, Sw, g){
   }
   const ges = Math.max(1, x - g);
   return '<svg viewBox="0 0 ' + ges.toFixed(1) + ' 100" preserveAspectRatio="none" ' +
-         'style="height:34px" aria-hidden="true">' +
+         'style="height:' + (hoehe || "34px") + '" aria-hidden="true">' +
          '<rect x="0" y="0" width="' + ges.toFixed(1) + '" height="100" fill="var(--fugengrund)"></rect>' + rects + '</svg>';
 }
 
@@ -884,6 +973,8 @@ function render(){
       speichern(); render();
     });
     renderProben(null, B, Sw, S.gZiel, c);
+    renderDruckkopf(B, Sw, S.gZiel, c);
+    renderMusterblatt(null, B, Sw, S.gZiel, c, "einer Wand");
     speichern();
     return;
   }
@@ -962,7 +1053,7 @@ function render(){
         (z.typ === "B" ? "breit" : "schmal") + '</td><td>' + mm(z.von) + '</td><td>' + mm(z.bis) +
         '</td><td>' + mm(z.breite) + '</td></tr>';
     });
-    html += '<details class="anriss"><summary>Anrissliste &middot; ' + a.zeilen.length +
+    html += '<details class="anriss" data-druck="anriss"><summary>Anrissliste &middot; ' + a.zeilen.length +
       ' Bretter, Maße ab linker Wandkante</summary><div class="tablewrap"><table>' +
       '<thead><tr><th>Nr.</th><th>Brett</th><th>Kante links</th><th>Kante rechts</th><th>Breite</th></tr></thead>' +
       '<tbody>' + rows + '</tbody>' +
@@ -976,7 +1067,7 @@ function render(){
                           .sort((x, y) => Math.abs(x.anteil - wunsch) - Math.abs(y.anteil - wunsch))
                           .slice(0, 4);
     if(alts.length){
-      html += '<details class="anriss"><summary>' + alts.length +
+      html += '<details class="anriss" data-druck="alt"><summary>' + alts.length +
         ' andere Aufteilungen mit derselben Fuge</summary><div class="alts" style="padding:4px 13px 11px">';
       alts.forEach(x => {
         html += '<div class="altrow"><span class="tag-w">' + x.nb + ' breit</span>' +
@@ -994,6 +1085,9 @@ function render(){
   out.innerHTML = html;
 
   renderProben(gewaehlt[0] || null, B, Sw, res.g, c);
+  renderDruckkopf(B, Sw, res.g, c);
+  renderMusterblatt(gewaehlt[0] || null, B, Sw, res.g, c,
+    gueltigeWaende[0].name || "Wand 1");
 
   out.querySelectorAll("button[data-wall]").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -1006,6 +1100,69 @@ function render(){
     });
   });
   speichern();
+}
+
+/* =====================================================================
+   DRUCKFASSUNG
+   ===================================================================== */
+const HEUTE = new Date().toLocaleDateString("de-DE", {day:"2-digit", month:"2-digit", year:"numeric"});
+
+/** Eckwerte über dem Plan - ohne sie ist ein Ausdruck auf der Baustelle wertlos. */
+function renderDruckkopf(B, Sw, g, c){
+  const paar = (k, v) => '<div><dt>' + k + '</dt><dd>' + v + '</dd></div>';
+  $("druckkopf").innerHTML = '<dl>' +
+    paar("Bretter breit", mm(B) + " mm") +
+    paar("Bretter schmal", mm(Sw) + " mm") +
+    paar("Fuge", mm1(g) + " mm") +
+    paar("Wandrand", c === 1 ? "Brett" : "Fuge") +
+    paar("Muster-Nr.", (S.seed >>> 0) + "") +
+    paar("Max. gleiche in Folge", S.maxRun + "") +
+    paar("Stand", HEUTE) +
+    paar("Maße", "Millimeter") +
+    '</dl>';
+  $("druckfuss").textContent =
+    "Wilde Schalung · Stand " + HEUTE + " · Anrissmaße kumuliert ab linker Wandkante messen, " +
+    "nicht von Brett zu Brett · Fugen ändern sich mit der Holzfeuchte";
+}
+
+/** Blatt mit den drei Musterverschlägen zum Auslegen und Entscheiden. */
+function renderMusterblatt(erste, B, Sw, g, c, wandName){
+  const seeds = probenSeeds();
+  const AUSSCHNITT = 30;
+  const nb = erste ? erste.nb : Math.round(AUSSCHNITT * S.anteil / 100);
+  const ns = erste ? erste.ns : AUSSCHNITT - Math.round(AUSSCHNITT * S.anteil / 100);
+
+  let html = '<h2 style="font-size:15pt;margin-bottom:6px">Musterbilder zur Auswahl</h2>' +
+    '<p class="hinweis">Drei Vorschläge für die Brettfolge, jeweils die ersten ' + AUSSCHNITT +
+    ' Bretter von ' + esc(wandName) + '. Stückzahlen und Fuge sind bei allen dreien gleich – ' +
+    'es unterscheidet sich nur die Reihenfolge. Die Nummer des gewählten Musters notieren, ' +
+    'damit sich die Anrissliste jederzeit gleich wieder erzeugen lässt.</p>';
+
+  seeds.forEach((sd, i) => {
+    const folge = muster(nb, ns, S.maxRun, sd >>> 0).folge.slice(0, AUSSCHNITT);
+    const gewaehlt = (sd >>> 0) === (S.seed >>> 0);
+    html += '<div class="vorschlag"><h3>Vorschlag ' + (i + 1) +
+      '<span>Muster-Nr. ' + (sd >>> 0) + (gewaehlt ? " · gewählt" : "") + '</span></h3>' +
+      streifenSVG(folge, B, Sw, erste ? g : S.gZiel, "32mm") + '</div>';
+  });
+
+  html += '<p class="hinweis" style="margin-top:6mm">Breit ' + mm(B) + ' mm im Holzton, schmal ' +
+    mm(Sw) + ' mm in Grau, Fuge ' + mm1(g) + ' mm.</p>';
+  $("musterblatt").innerHTML = html;
+}
+
+/** Vor dem Druck die Anrisslisten aufklappen, danach wieder zumachen. */
+function anrissAufklappen(){
+  document.querySelectorAll('details[data-druck="anriss"]').forEach(d => {
+    if(!d.open){ d.dataset.warzu = "1"; d.open = true; }
+  });
+}
+function druckAufraeumen(){
+  document.documentElement.classList.remove("nur-muster");
+  document.querySelectorAll('details[data-druck="anriss"][data-warzu]').forEach(d => {
+    d.open = false;
+    delete d.dataset.warzu;
+  });
 }
 
 /* =====================================================================
@@ -1166,7 +1323,26 @@ function init(){
     renderWalls(); render();
   });
 
-  $("btnPrint").addEventListener("click", () => window.print());
+  $("btnPrint").addEventListener("click", () => {
+    document.documentElement.classList.remove("nur-muster");
+    anrissAufklappen();
+    window.print();
+  });
+
+  $("btnMusterPdf").addEventListener("click", () => {
+    document.documentElement.classList.add("nur-muster");
+    window.print();
+  });
+
+  // Auch beim Drucken über das Browsermenü sollen die Listen offen sein
+  window.addEventListener("beforeprint", anrissAufklappen);
+  window.addEventListener("afterprint", druckAufraeumen);
+  if(window.matchMedia){
+    const mq = window.matchMedia("print");
+    const reagiere = e => { if(e.matches) anrissAufklappen(); else druckAufraeumen(); };
+    if(mq.addEventListener) mq.addEventListener("change", reagiere);
+    else if(mq.addListener) mq.addListener(reagiere);
+  }
 
   $("btnTheme").addEventListener("click", () => {
     const jetzt = document.documentElement.getAttribute("data-theme");

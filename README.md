@@ -59,6 +59,14 @@ aufgeht. Genau daran scheitert eine Rechnung pro Einzelwand.
   Brettfolge; höchstens *n* gleiche Bretter in Folge
 * Anrissliste je Wand: kumulierte Maße ab linker Wandkante, druckbar
 * Alternative Aufteilungen mit derselben Fuge, per Klick übernehmbar
+* Zwei Druckfassungen über den Druckdialog des Browsers („Als PDF sichern"):
+  **Plan als PDF** mit Datenkopf, Bedarf und je Wand einer Seite mit Ansicht
+  und aufgeklappter Anrissliste; **Musterblatt als PDF** mit den drei
+  Stilvorschlägen auf einem Blatt zum Vergleichen
+
+Gedruckt wird immer auf hellem Grund, unabhängig von der Ansicht am Bildschirm.
+Die beiden Brettfarben sind in der Helligkeit getrennt, damit sie im
+Schwarzweißdruck unterscheidbar bleiben.
 
 ## Grenzen
 
