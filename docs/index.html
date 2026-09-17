@@ -586,7 +586,8 @@ tbody tr:nth-child(even){background:var(--surface-2)}
       <div class="row2">
         <div class="field">
           <label for="maxRun">Max. gleiche in Folge</label>
-          <input type="number" id="maxRun" value="2" min="1" max="9" step="1">
+          <input type="number" id="maxRun" value="0" min="0" max="9" step="1">
+          <span class="hint"><b>0</b> = ohne Begrenzung, rein zuf&auml;llig gemischt.</span>
         </div>
         <div class="field">
           <label for="seed">Muster-Nr.</label>
@@ -674,7 +675,8 @@ tbody tr:nth-child(even){background:var(--surface-2)}
    ===================================================================== */
 const VORGABE = {
   B:142, S:55, gMin:8, gZiel:10, gMax:15,
-  randModus:"brett", tolG:0.4, anteil:30, maxRun:2, seed:1874, lebron:0,
+  randModus:"brett", tolG:0.4, anteil:30, maxRun:0, seed:1874, lebron:0,
+  stand:"142-55-10",   // aendert sich, wenn die festen Brettmasse wechseln
   walls:[
     {name:"", L:0},
     {name:"", L:0},
@@ -693,6 +695,16 @@ function laden(){
     const o = JSON.parse(raw);
     if(o && Array.isArray(o.walls) && o.walls.length){
       S = Object.assign({}, VORGABE, o);
+      // Brettmasse und Zielfuge liegen fest. Aendern sie sich in der Vorgabe,
+      // setzen sie sich gegen einen aelteren Speicherstand durch - sonst
+      // rechnete das Geraet weiter mit Werten von vorgestern. Die eingetragenen
+      // Wandlaengen bleiben erhalten.
+      if(o.stand !== VORGABE.stand){
+        S.B = VORGABE.B;
+        S.S = VORGABE.S;
+        S.gZiel = VORGABE.gZiel;
+        S.stand = VORGABE.stand;
+      }
       // Eine von Hand übernommene Aufteilung gilt für die laufende Sitzung.
       // Bliebe sie gespeichert, überstimmte sie Wochen später unbemerkt den
       // Wunschanteil - genau das war die Ursache des 4,905-m-Falls.
@@ -878,9 +890,15 @@ function restMischbar(restB, restS, letzter, lauf, limit){
   return restB <= capB && restS <= capS;
 }
 
+/**
+ * maxRunWunsch <= 0 bedeutet: keine Begrenzung, rein zufaellige Mischung.
+ * Mit limit = Infinity liefert restMischbar immer true, die Auswahl haengt
+ * dann allein am Verhaeltnis der verbleibenden Bretter.
+ */
 function muster(nb, ns, maxRunWunsch, seed){
+  const ohneGrenze = !(maxRunWunsch > 0);
   const noetig = maxRunNoetig(nb, ns);
-  const limit = Math.max(1, maxRunWunsch, noetig);
+  const limit = ohneGrenze ? Infinity : Math.max(1, maxRunWunsch, noetig);
   const rnd = mulberry32(seed >>> 0);
   const folge = [];
   let restB = nb, restS = ns, lauf = 0, letzter = null;
@@ -904,7 +922,12 @@ function muster(nb, ns, maxRunWunsch, seed){
     lauf = (wahl === letzter) ? lauf + 1 : 1;
     letzter = wahl;
   }
-  return {folge:folge, limit:limit, aufgeweicht: limit > maxRunWunsch};
+  return {
+    folge: folge,
+    limit: limit,
+    ohneGrenze: ohneGrenze,
+    aufgeweicht: !ohneGrenze && limit > maxRunWunsch
+  };
 }
 
 /** Anrissmaße ab linker Wandkante, kumuliert. */
@@ -1215,7 +1238,7 @@ function renderDruckkopf(B, Sw, g, c){
     paar("Fuge", mm1(g) + " mm") +
     paar("Wandrand", c === 1 ? "Brett" : "Fuge") +
     paar("Muster-Nr.", (S.seed >>> 0) + "") +
-    paar("Max. gleiche in Folge", S.maxRun + "") +
+    paar("Gleiche in Folge", S.maxRun > 0 ? "max. " + S.maxRun : "ohne Grenze") +
     paar("Stand", HEUTE) +
     paar("Maße", "Millimeter") +
     '</dl>';
