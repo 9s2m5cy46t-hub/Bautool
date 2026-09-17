@@ -354,6 +354,21 @@ tbody tr:nth-child(even){background:var(--surface-2)}
 }
 .handwahl button{font-family:"Archivo",sans-serif;font-size:.8rem;padding:5px 11px;flex:none}
 
+/* Handlungsanweisung: mit welcher Wandlänge die Zielfuge aufgeht */
+.zielfuge{
+  display:flex;flex-wrap:wrap;gap:8px 12px;align-items:baseline;
+  margin-top:12px;padding:11px 13px;
+  background:var(--surface);border:1px solid var(--wide);
+  border-left:3px solid var(--wide);border-radius:var(--r);
+  font-family:"Source Serif 4",Georgia,serif;font-size:.94rem;color:var(--ink);
+}
+.zielfuge .marke{
+  flex:none;font-family:"IBM Plex Mono",monospace;font-size:.66rem;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--wide);
+  border:1px solid var(--wide);border-radius:100px;padding:2px 8px;
+}
+.zielfuge .zweit{display:inline-block;margin-top:5px;color:var(--ink-soft);font-size:.9em}
+
 .alts{margin-top:12px}
 .alts .altrow{
   display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;
@@ -1238,15 +1253,9 @@ function render(){
         (fehler < 0.5 ? "var(--ok)" : "var(--alarm)") + '">' + mm1(fehler) + '<small>mm</small></div></div>' +
       '</div>';
 
-    html += '<div class="viz">' + wandSVG(m.folge, B, Sw, k.g, c, w.L) +
-      '<div class="legend"><span><span class="swatch sw-wide"></span>' + k.nb + ' × ' + mm(B) + ' mm</span>' +
-      '<span><span class="swatch sw-narrow"></span>' + k.ns + ' × ' + mm(Sw) + ' mm</span>' +
-      '<span>' + (k.nb + k.ns - c) + ' Fugen à ' + mm1(k.g) + ' mm</span>' +
-      '<span>Muster-Nr. ' + ((S.seed >>> 0) + i * 7919) + '</span></div>' +
-      (m.aufgeweicht ? '<p class="note" style="color:var(--narrow)">Bei diesem Verhältnis sind bis zu ' +
-        m.limit + ' gleiche Bretter in Folge unvermeidbar.</p>' : '') + '</div>';
-
-    // Fuge nicht glatt ODER Verhältnis daneben? Dann sagen, welche Wandlänge beides löst.
+    // Trifft die Fuge das Ziel nicht - oder das Verhältnis nicht? Dann sagen,
+    // mit welcher Wandlänge es aufginge. Steht direkt unter den Zahlen, weil
+    // es die eigentliche Handlungsanweisung ist.
     const fugeDaneben = Math.abs(k.g - S.gZiel) > 0.05;
     const anteilDaneben = abw > 10;
     if(fugeDaneben || anteilDaneben){
@@ -1254,16 +1263,29 @@ function render(){
         .filter(x => Math.abs(x.differenz) >= 1);
       if(vorschlag.length){
         const v = vorschlag[0];
-        const masse = '<b>' + meter(v.laenge) + ' m</b> (' +
-          (v.differenz > 0 ? '+' : '−') + mm(Math.abs(v.differenz)) + ' mm)';
-        html += anteilDaneben
-          ? '<p class="note" style="color:var(--narrow)">Mit ' + masse + ' ginge die Zielfuge von ' +
-            mm1(S.gZiel) + ' mm glatt auf <em>und</em> das Verhältnis läge bei ' +
-            nf(v.anteil * 100, 0) + ' % breit: ' + v.nb + ' breit / ' + v.ns + ' schmal.</p>'
-          : '<p class="note">Mit ' + masse + ' ginge die Zielfuge von ' +
-            mm1(S.gZiel) + ' mm glatt auf.</p>';
+        const zweit = vorschlag.find(x =>
+          Math.sign(x.differenz) !== Math.sign(v.differenz) && Math.abs(x.differenz) <= 50);
+        let txt = 'Bei einer Wandlänge von <b>' + meter(v.laenge) + ' m</b> (' +
+          (v.differenz > 0 ? '+' : '−') + mm(Math.abs(v.differenz)) + ' mm) käme die Fuge genau auf ' +
+          mm1(S.gZiel) + ' mm';
+        txt += ': ' + v.nb + ' breit / ' + v.ns + ' schmal, ' + nf(v.anteil * 100, 0) + ' % breit.';
+        if(zweit){
+          txt += '<br><span class="zweit">Ebenso bei <b>' + meter(zweit.laenge) + ' m</b> (' +
+            (zweit.differenz > 0 ? '+' : '−') + mm(Math.abs(zweit.differenz)) + ' mm): ' +
+            zweit.nb + ' breit / ' + zweit.ns + ' schmal, ' + nf(zweit.anteil * 100, 0) + ' % breit.</span>';
+        }
+        html += '<div class="zielfuge"><span class="marke">Ziel ' + mm1(S.gZiel) + ' mm</span>' +
+          '<span>' + txt + '</span></div>';
       }
     }
+
+    html += '<div class="viz">' + wandSVG(m.folge, B, Sw, k.g, c, w.L) +
+      '<div class="legend"><span><span class="swatch sw-wide"></span>' + k.nb + ' × ' + mm(B) + ' mm</span>' +
+      '<span><span class="swatch sw-narrow"></span>' + k.ns + ' × ' + mm(Sw) + ' mm</span>' +
+      '<span>' + (k.nb + k.ns - c) + ' Fugen à ' + mm1(k.g) + ' mm</span>' +
+      '<span>Muster-Nr. ' + ((S.seed >>> 0) + i * 7919) + '</span></div>' +
+      (m.aufgeweicht ? '<p class="note" style="color:var(--narrow)">Bei diesem Verhältnis sind bis zu ' +
+        m.limit + ' gleiche Bretter in Folge unvermeidbar.</p>' : '') + '</div>';
 
     // Anteil deutlich daneben? Sagen, ob es überhaupt besser ginge.
     if(abw > 10 && !vonHand[i]){
