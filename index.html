@@ -375,6 +375,12 @@ tbody tr:nth-child(even){background:var(--surface-2)}
   font-size:1.55rem;font-weight:600;letter-spacing:-.02em;color:var(--ink);
 }
 .lsg-diff{font-family:"IBM Plex Mono",monospace;font-size:.85rem;color:var(--ink-soft)}
+.zielfuge.kein{border-color:var(--narrow)}
+.zielfuge.kein .zf-kopf{background:var(--narrow)}
+.zf-text{
+  padding:11px 13px;font-family:"Source Serif 4",Georgia,serif;
+  font-size:.92rem;color:var(--ink);
+}
 .lsg-auf{
   grid-column:1;font-family:"Source Serif 4",Georgia,serif;
   font-size:.88rem;color:var(--ink-soft);
@@ -1249,11 +1255,28 @@ function render(){
     // Trifft die Fuge das Ziel nicht, gehört die passende Wandlänge hierher -
     // gross, und mit einem Knopf, der sie sofort einsetzt.
     if(Math.abs(k.g - S.gZiel) > 0.05){
-      const vorschlag = glatteLaengen(w.L, B, Sw, S.gZiel, c, wunsch, 0.06, 60)
-        .filter(x => Math.abs(x.differenz) >= 1);
+      // Am gebauten Haus lassen sich nur wenige Millimeter verschieben, und ein
+      // glattes Maß reißt sich leichter an als ein krummes. Beides fließt ein:
+      // erreichbar heißt höchstens MESSBAR mm, und volle Zentimeter gehen vor.
+      const MESSBAR = 25;
+      const rundStrafe = mmWert =>
+        mmWert % 10 === 0 ? 0 : (mmWert % 5 === 0 ? 4 : 8);
+      const vorschlag = glatteLaengen(w.L, B, Sw, S.gZiel, c, wunsch, 0.06, MESSBAR)
+        .filter(x => Math.abs(x.differenz) >= 1)
+        .sort((a, b) =>
+          (Math.abs(a.differenz) + rundStrafe(Math.round(a.laenge))) -
+          (Math.abs(b.differenz) + rundStrafe(Math.round(b.laenge))));
       const erste = vorschlag[0];
       const zweite = erste && vorschlag.find(x =>
         Math.sign(x.differenz) !== Math.sign(erste.differenz));
+      if(!erste){
+        html += '<div class="zielfuge kein"><div class="zf-kopf">' + mm1(S.gZiel) +
+          ' mm Fuge hier nicht erreichbar</div><div class="zf-text">Im Umkreis von ' + MESSBAR +
+          ' mm gibt es keine Wandlänge, bei der die Fuge auf ' + mm1(S.gZiel) +
+          ' mm käme. Am Bau ist mehr kaum zu verschieben &ndash; ändere stattdessen die ' +
+          '<b>Zielfuge</b> in Schritt 2 auf einen Wert, der hier aufgeht, oder ' +
+          'nimm ein anderes Brettmaß.</div></div>';
+      }
       if(erste){
         const zeile = v =>
           '<div class="lsg"><div class="lsg-mass"><span class="lsg-len">' + meter(v.laenge) + ' m</span>' +
