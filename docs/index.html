@@ -1246,24 +1246,37 @@ function render(){
       (m.aufgeweicht ? '<p class="note" style="color:var(--narrow)">Bei diesem Verhältnis sind bis zu ' +
         m.limit + ' gleiche Bretter in Folge unvermeidbar.</p>' : '') + '</div>';
 
-    // Steht die Fuge nicht glatt auf dem Ziel? Dann sagen, welche Wandlänge das schaffte.
-    if(Math.abs(k.g - S.gZiel) > 0.05){
+    // Fuge nicht glatt ODER Verhältnis daneben? Dann sagen, welche Wandlänge beides löst.
+    const fugeDaneben = Math.abs(k.g - S.gZiel) > 0.05;
+    const anteilDaneben = abw > 10;
+    if(fugeDaneben || anteilDaneben){
       const vorschlag = glatteLaengen(w.L, B, Sw, S.gZiel, c, wunsch, 0.06, 50)
         .filter(x => Math.abs(x.differenz) >= 1);
       if(vorschlag.length){
         const v = vorschlag[0];
-        html += '<p class="note">Mit <b>' + meter(v.laenge) + ' m</b> (' +
-          (v.differenz > 0 ? '+' : '−') + mm(Math.abs(v.differenz)) + ' mm) ginge die Zielfuge von ' +
-          mm1(S.gZiel) + ' mm glatt auf.</p>';
+        const masse = '<b>' + meter(v.laenge) + ' m</b> (' +
+          (v.differenz > 0 ? '+' : '−') + mm(Math.abs(v.differenz)) + ' mm)';
+        html += anteilDaneben
+          ? '<p class="note" style="color:var(--narrow)">Mit ' + masse + ' ginge die Zielfuge von ' +
+            mm1(S.gZiel) + ' mm glatt auf <em>und</em> das Verhältnis läge bei ' +
+            nf(v.anteil * 100, 0) + ' % breit: ' + v.nb + ' breit / ' + v.ns + ' schmal.</p>'
+          : '<p class="note">Mit ' + masse + ' ginge die Zielfuge von ' +
+            mm1(S.gZiel) + ' mm glatt auf.</p>';
       }
     }
 
     // Anteil deutlich daneben? Sagen, ob es überhaupt besser ginge.
     if(abw > 10 && !vonHand[i]){
+      const anz = listen[i].length;
       html += '<p class="note" style="color:var(--narrow)">Der Wunschanteil von ' + nf(S.anteil, 0) +
         ' % ist hier nicht erreichbar: Im Fugenbereich ' + mm1(S.gMin) + '–' + mm1(S.gMax) +
-        ' mm kommt keine Aufteilung näher als ' + nf(besterAnteil, 0) +
-        ' %. Ein weiterer Fugenbereich schafft mehr Spielraum.</p>';
+        ' mm gibt es für diese Wand ' + (anz === 1 ? 'nur <b>eine einzige</b> Aufteilung' :
+          'nur <b>' + anz + '</b> Aufteilungen') + ', und keine kommt näher als ' +
+        nf(besterAnteil, 0) + ' %. ' +
+        (anz <= 5
+          ? 'Der Fugenbereich ist zu eng gefasst &ndash; mit min und max weiter auseinander ' +
+            'entstehen hunderte Möglichkeiten, aus denen sich das Verhältnis treffen lässt.'
+          : 'Ein weiterer Fugenbereich schafft mehr Spielraum.') + '</p>';
     }
 
     /* Anrissliste */
