@@ -444,12 +444,15 @@ tbody tr:nth-child(even){background:var(--surface-2)}
   .stat .v{font-size:12pt}
 
   /* Anrisslisten: Kopfzeile auf jeder Seite wiederholen */
-  details[data-druck="anriss"]{break-inside:auto;border:none;margin-top:4mm}
-  details[data-druck="anriss"] > summary{
+  details[data-druck="anriss"], details[data-druck="glatt"]{break-inside:auto;border:none;margin-top:4mm}
+  details[data-druck="glatt"]{break-inside:avoid}
+  details[data-druck="anriss"] > summary, details[data-druck="glatt"] > summary{
     padding:0 0 4px;font-size:9pt;font-weight:600;border-bottom:1pt solid #000;
   }
   details[data-druck="anriss"] > summary::after,
-  details[data-druck="anriss"][open] > summary::after{content:"" !important}
+  details[data-druck="anriss"][open] > summary::after,
+  details[data-druck="glatt"] > summary::after,
+  details[data-druck="glatt"][open] > summary::after{content:"" !important}
   .tablewrap{overflow:visible;border:none}
   table{font-size:8.6pt}
   thead{display:table-header-group}
@@ -763,6 +766,37 @@ function kandidaten(L, B, Sw, gMin, gMax, c){
   return out;
 }
 
+/**
+ * Wandlängen nahe L, bei denen die Zielfuge exakt aufgeht.
+ *
+ * Bei fester Fuge bestimmt jede Kombination genau eine Länge:
+ *     L = nb·(B+g) + ns·(S+g) − c·g
+ * Also nicht suchen, sondern ausrechnen. Wenige Millimeter Unterschied
+ * verschluckt die Eckausbildung ohnehin - dafür steht die Fuge glatt,
+ * und wenn jede Wand auf dieselbe Zielfuge kommt, sind alle Wände gleich.
+ */
+function glatteLaengen(L, B, Sw, g, c, wunschAnteil, band, spielraum){
+  const out = [];
+  if(!(L > 0) || !(B > 0) || !(Sw > 0) || !(g > 0)) return out;
+  const nbMax = Math.ceil((L + spielraum) / (B + g)) + 1;
+  const nsMax = Math.ceil((L + spielraum) / (Sw + g)) + 1;
+
+  for(let nb = 0; nb <= nbMax; nb++){
+    for(let ns = 0; ns <= nsMax; ns++){
+      const N = nb + ns;
+      if(N < 2) continue;
+      const laenge = nb * (B + g) + ns * (Sw + g) - c * g;
+      const d = laenge - L;
+      if(Math.abs(d) > spielraum) continue;
+      const anteil = nb / N;
+      if(Math.abs(anteil - wunschAnteil) > band) continue;
+      out.push({differenz:d, laenge:laenge, nb:nb, ns:ns, N:N, anteil:anteil});
+    }
+  }
+  out.sort((a, b) => Math.abs(a.differenz) - Math.abs(b.differenz));
+  return out;
+}
+
 /** Erster Index mit g >= ziel (binäre Suche auf sortierter Kandidatenliste). */
 function unteresEnde(list, ziel){
   let a = 0, b = list.length;
@@ -770,16 +804,30 @@ function unteresEnde(list, ziel){
   return a;
 }
 
-/** Bester Kandidat einer Wand innerhalb [gTest-tol, gTest+tol]. */
+/**
+ * Bester Kandidat einer Wand innerhalb [gTest-tol, gTest+tol].
+ *
+ * Der Wunschanteil wirkt als Schranke, nicht nur als Gewicht: Aufteilungen,
+ * die mehr als ANTEIL_SCHRANKE daneben liegen, kommen nur zum Zug, wenn im
+ * Fenster gar nichts Besseres steht. Sonst gewinnt bei stark gewichteter
+ * Zielfuge eine Aufteilung mit passender Fuge, aber unbrauchbarem Verhältnis.
+ */
+const ANTEIL_SCHRANKE = 0.12;
+
 function besterImFenster(list, gTest, tol, wunschAnteil){
-  let i = unteresEnde(list, gTest - tol - 1e-9);
+  const start = unteresEnde(list, gTest - tol - 1e-9);
   let best = null, bestScore = Infinity;
-  for(; i < list.length && list[i].g <= gTest + tol + 1e-9; i++){
+  let notNagel = null, notScore = Infinity;
+
+  for(let i = start; i < list.length && list[i].g <= gTest + tol + 1e-9; i++){
     const k = list[i];
-    const score = Math.abs(k.anteil - wunschAnteil) * 10 + Math.abs(k.g - gTest) * 0.05;
-    if(score < bestScore){ bestScore = score; best = k; }
+    const dAnteil = Math.abs(k.anteil - wunschAnteil);
+    const score = dAnteil * 10 + Math.abs(k.g - gTest) * 0.05;
+    if(dAnteil <= ANTEIL_SCHRANKE){
+      if(score < bestScore){ bestScore = score; best = k; }
+    }else if(score < notScore){ notScore = score; notNagel = k; }
   }
-  return best;
+  return best || notNagel;
 }
 
 /**
@@ -822,7 +870,7 @@ function gemeinsameFuge(rohListen, tol, gZiel, wunschAnteil, ohneKuerzung){
   let minTolNoetig = Infinity;
 
   for(const gTest of punkte){
-    let maxAbw = 0, anteilAbw = 0;
+    let maxAbw = 0, anteilAbw = 0, fugeAbw = 0, gSumme = 0;
     const treffer = [];
     let ok = true;
     for(const l of listen){
@@ -838,16 +886,29 @@ function gemeinsameFuge(rohListen, tol, gZiel, wunschAnteil, ohneKuerzung){
         continue;
       }
       treffer.push(k);
-      maxAbw = Math.max(maxAbw, Math.abs(k.g - gTest));
       anteilAbw += Math.abs(k.anteil - wunschAnteil);
+      fugeAbw += Math.abs(k.g - gZiel);
+      gSumme += k.g;
     }
     minTolNoetig = Math.min(minTolNoetig, maxAbw);
     if(!ok) continue;
+    // Spreizung: wie weit liegen die Wandfugen untereinander auseinander?
+    if(treffer.length){
+      const gMinT = Math.min(...treffer.map(t => t.g));
+      const gMaxT = Math.max(...treffer.map(t => t.g));
+      maxAbw = Math.max(maxAbw, (gMaxT - gMinT) / 2);
+    }
 
-    const score = anteilAbw * 10 + Math.abs(gTest - gZiel) * 0.6 + maxAbw * 2;
+    // Bewertet werden die tatsächlich gewählten Fugen, nicht der Suchpunkt gTest -
+    // sonst gewinnt ein Testwert, den keine Wand erreicht, und die Anzeige lügt.
+    // Beide Abweichungen gehen als Durchschnitt ein: als Summe wögen sie bei vier
+    // Wänden viermal so schwer wie bei einer. Ein Millimeter neben der Zielfuge
+    // zählt dabei wie zehn Prozentpunkte neben dem Wunschanteil.
+    const n = treffer.length || 1;
+    const score = (anteilAbw / n) * 10 + (fugeAbw / n) * 1.0 + maxAbw * 2;
     if(score < bestScore){
       bestScore = score;
-      best = {ok:true, g:gTest, treffer:treffer, maxAbw:maxAbw, minTol:minTolNoetig};
+      best = {ok:true, g:gSumme / n, treffer:treffer, maxAbw:maxAbw, minTol:minTolNoetig};
     }
   }
   if(!best){
@@ -1099,7 +1160,7 @@ function render(){
   html += '<div class="bedarf" id="bedarf">' +
     '<div class="kopf"><span>Das brauchst du</span><span>' + gueltigeWaende.length +
       ' Wandabschnitte &middot; ' + meter(gueltigeWaende.reduce((a, w) => a + w.L, 0)) + ' m &middot; Rand: ' +
-      (c === 1 ? 'Brett' : 'Fuge') + '</span></div>' +
+      (c === 1 ? 'Brett' : 'Fuge') + ' &middot; Ziel ' + mm1(S.gZiel) + ' mm</span></div>' +
     '<div class="zeilen">' +
       '<div class="z"><div class="k"><span class="swatch sw-wide"></span>Breite Bretter à ' + mm(B) + ' mm</div>' +
         '<div class="gross">' + sumB + '<small>Stück</small></div></div>' +
@@ -1114,6 +1175,31 @@ function render(){
       'bestellst du <b>' + reserve(sumB) + '</b> breite und <b>' + reserve(sumS) + '</b> schmale Bretter &ndash; ' +
       'jeweils in Wandhöhe, die hier nicht mitgerechnet ist.</div>' +
     '</div>';
+
+  /* ---- Alle Wände auf die glatte Zielfuge ---- */
+  const glatt = gueltigeWaende.map(w =>
+    glatteLaengen(w.L, B, Sw, S.gZiel, c, wunsch, 0.06, 50).filter(x => Math.abs(x.differenz) >= 1)[0] || null);
+  if(glatt.some(Boolean)){
+    let zeilen = "";
+    glatt.forEach((v, i) => {
+      const w = gueltigeWaende[i];
+      const name = esc(w.name || ("Wand " + (i + 1)));
+      zeilen += v
+        ? '<tr><td>' + name + '</td><td>' + meter(w.L) + '</td><td>' + meter(v.laenge) + '</td><td>' +
+          (v.differenz > 0 ? "+" : "−") + mm(Math.abs(v.differenz)) + '</td></tr>'
+        : '<tr><td>' + name + '</td><td>' + meter(w.L) +
+          '</td><td colspan="2" style="text-align:left;color:var(--ink-soft)">Länge passt bereits</td></tr>';
+    });
+    html += '<details class="anriss" data-druck="glatt"><summary>Alle Wände auf glatte ' +
+      mm1(S.gZiel) + ' mm Fuge bringen</summary>' +
+      '<div class="tablewrap"><table>' +
+      '<thead><tr><th>Wand</th><th>eingetragen</th><th>glatt bei</th><th>Differenz</th></tr></thead>' +
+      '<tbody>' + zeilen + '</tbody></table></div>' +
+      '<p class="note" style="padding:0 13px 12px">Werden alle Wände auf diese Längen gebracht, hat die ganze ' +
+      'Fassade dieselbe Fuge von ' + mm1(S.gZiel) + ' mm &ndash; die Abweichung zwischen den Wänden ist dann null, ' +
+      'nicht nur klein. Die paar Millimeter verschluckt in der Regel die Eckausbildung; ob sie dafür Spielraum ' +
+      'lässt, entscheidet ihr am Bau, nicht der Rechner.</p></details>';
+  }
 
   /* ---- Karten je Wand ---- */
   gueltigeWaende.forEach((w, i) => {
@@ -1159,6 +1245,18 @@ function render(){
       '<span>Muster-Nr. ' + ((S.seed >>> 0) + i * 7919) + '</span></div>' +
       (m.aufgeweicht ? '<p class="note" style="color:var(--narrow)">Bei diesem Verhältnis sind bis zu ' +
         m.limit + ' gleiche Bretter in Folge unvermeidbar.</p>' : '') + '</div>';
+
+    // Steht die Fuge nicht glatt auf dem Ziel? Dann sagen, welche Wandlänge das schaffte.
+    if(Math.abs(k.g - S.gZiel) > 0.05){
+      const vorschlag = glatteLaengen(w.L, B, Sw, S.gZiel, c, wunsch, 0.06, 50)
+        .filter(x => Math.abs(x.differenz) >= 1);
+      if(vorschlag.length){
+        const v = vorschlag[0];
+        html += '<p class="note">Mit <b>' + meter(v.laenge) + ' m</b> (' +
+          (v.differenz > 0 ? '+' : '−') + mm(Math.abs(v.differenz)) + ' mm) ginge die Zielfuge von ' +
+          mm1(S.gZiel) + ' mm glatt auf.</p>';
+      }
+    }
 
     // Anteil deutlich daneben? Sagen, ob es überhaupt besser ginge.
     if(abw > 10 && !vonHand[i]){
@@ -1275,13 +1373,13 @@ function renderMusterblatt(erste, B, Sw, g, c, wandName){
 
 /** Vor dem Druck die Anrisslisten aufklappen, danach wieder zumachen. */
 function anrissAufklappen(){
-  document.querySelectorAll('details[data-druck="anriss"]').forEach(d => {
+  document.querySelectorAll('details[data-druck="anriss"], details[data-druck="glatt"]').forEach(d => {
     if(!d.open){ d.dataset.warzu = "1"; d.open = true; }
   });
 }
 function druckAufraeumen(){
   document.documentElement.classList.remove("nur-muster");
-  document.querySelectorAll('details[data-druck="anriss"][data-warzu]').forEach(d => {
+  document.querySelectorAll('details[data-warzu]').forEach(d => {
     d.open = false;
     delete d.dataset.warzu;
   });
