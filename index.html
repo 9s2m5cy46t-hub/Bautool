@@ -1261,14 +1261,41 @@ function render(){
       const MESSBAR = 25;
       const rundStrafe = mmWert =>
         mmWert % 10 === 0 ? 0 : (mmWert % 5 === 0 ? 4 : 8);
-      const vorschlag = glatteLaengen(w.L, B, Sw, S.gZiel, c, wunsch, 0.06, MESSBAR)
+      // Kurze Wände haben kaum Kombinationen - bei 875 mm sieben statt 180 -,
+      // deshalb breit suchen und Nähe gegen Verhältnistreue abwägen, statt
+      // Aufteilungen vorab wegzufiltern. Zehn Prozentpunkte neben dem Wunsch
+      // wiegen dabei wie fünf Millimeter mehr Längenänderung.
+      const guete = v => Math.abs(v.differenz) + rundStrafe(Math.round(v.laenge)) +
+        Math.abs(v.anteil * 100 - S.anteil) * 0.5;
+      // Nur anbieten, was der Rechner bei dieser Länge auch wirklich wählt.
+      // Ohne diese Gegenprobe führte jeder zwanzigste Vorschlag auf eine Länge,
+      // bei der eine andere Aufteilung gewinnt und die Zielfuge daneben liegt -
+      // der Knopf hätte also sein Versprechen gebrochen.
+      const haeltWort = v => {
+        const kk = kandidaten(v.laenge, B, Sw, S.gMin, S.gMax, c);
+        if(!kk.length) return false;
+        const rr = gemeinsameFuge([kk], S.tolG, S.gZiel, wunsch);
+        return rr.ok && Math.abs(rr.treffer[0].g - S.gZiel) <= 0.05 &&
+               rr.treffer[0].nb === v.nb && rr.treffer[0].ns === v.ns;
+      };
+      const vorschlag = glatteLaengen(w.L, B, Sw, S.gZiel, c, wunsch, 0.25, MESSBAR)
         .filter(x => Math.abs(x.differenz) >= 1)
-        .sort((a, b) =>
-          (Math.abs(a.differenz) + rundStrafe(Math.round(a.laenge))) -
-          (Math.abs(b.differenz) + rundStrafe(Math.round(b.laenge))));
+        .sort((a, b) => guete(a) - guete(b))
+        // Jede Gegenprobe kostet einen Durchlauf des Rechenkerns. Bei kurzen
+        // Wänden ist das nichts, bei sehr langen mit schmalen Brettern spürbar -
+        // dort reichen wenige Proben, weil fast jeder Vorschlag hält.
+        .slice(0, listen[i].length > 400 ? 4 : 14)
+        .filter(haeltWort);
       const erste = vorschlag[0];
       const zweite = erste && vorschlag.find(x =>
         Math.sign(x.differenz) !== Math.sign(erste.differenz));
+      // Bei kurzer Wand ist die Auswahl so klein, dass ein drittes Angebot mit
+      // deutlich anderem Verhältnis den Unterschied macht - dort liegt oft die
+      // Aufteilung, die man von Hand im Sinn hatte.
+      const dritte = erste && listen[i].length <= 8 && vorschlag.find(x =>
+        x !== erste && x !== zweite &&
+        Math.abs(x.anteil - erste.anteil) > 0.08 &&
+        (!zweite || Math.abs(x.anteil - zweite.anteil) > 0.08));
       if(!erste){
         html += '<div class="zielfuge kein"><div class="zf-kopf">' + mm1(S.gZiel) +
           ' mm Fuge hier nicht erreichbar</div><div class="zf-text">Im Umkreis von ' + MESSBAR +
@@ -1278,16 +1305,29 @@ function render(){
           'nimm ein anderes Brettmaß.</div></div>';
       }
       if(erste){
-        const zeile = v =>
-          '<div class="lsg"><div class="lsg-mass"><span class="lsg-len">' + meter(v.laenge) + ' m</span>' +
-          '<span class="lsg-diff">' + (v.differenz > 0 ? '+' : '−') + mm(Math.abs(v.differenz)) + ' mm</span></div>' +
-          '<div class="lsg-auf">' + v.nb + ' breit / ' + v.ns + ' schmal &middot; ' +
-          nf(v.anteil * 100, 0) + ' % breit</div>' +
-          '<button type="button" class="primary" data-wall="' + i + '" data-setlen="' +
-          Math.round(v.laenge) + '">Länge übernehmen</button></div>';
+        const zeile = v => {
+          const weit = Math.abs(v.anteil * 100 - S.anteil) > 10;
+          return '<div class="lsg"><div class="lsg-mass"><span class="lsg-len">' + meter(v.laenge) + ' m</span>' +
+            '<span class="lsg-diff">' + (v.differenz > 0 ? '+' : '−') + mm(Math.abs(v.differenz)) + ' mm</span></div>' +
+            '<div class="lsg-auf">' + v.nb + ' breit / ' + v.ns + ' schmal &middot; ' +
+            (weit
+              ? '<span style="color:var(--narrow)">' + nf(v.anteil * 100, 0) +
+                ' % breit (Wunsch ' + nf(S.anteil, 0) + ' %)</span>'
+              : nf(v.anteil * 100, 0) + ' % breit') + '</div>' +
+            '<button type="button" class="primary" data-wall="' + i + '" data-setlen="' +
+            Math.round(v.laenge) + '">Länge übernehmen</button></div>';
+        };
         html += '<div class="zielfuge">' +
           '<div class="zf-kopf">Für ' + mm1(S.gZiel) + ' mm Fuge diese Wand messen auf:</div>' +
-          zeile(erste) + (zweite ? zeile(zweite) : '') + '</div>';
+          zeile(erste) + (zweite ? zeile(zweite) : '') + (dritte ? zeile(dritte) : '') + '</div>';
+      }
+      // Wenige Kombinationen erklären, warum die Vorschläge hier gröber ausfallen
+      if(listen[i].length <= 8){
+        html += '<p class="note">Diese Wand ist für 142er- und 55er-Bretter kurz: Im ' +
+          'Fugenbereich ' + mm1(S.gMin) + '–' + mm1(S.gMax) + ' mm gibt es nur <b>' +
+          listen[i].length + '</b> mögliche Aufteilungen. Deshalb liegen die Vorschläge ' +
+          'weiter auseinander als bei langen Wänden, und das Verhältnis lässt sich ' +
+          'kaum feinsteuern.</p>';
       }
     }
 
